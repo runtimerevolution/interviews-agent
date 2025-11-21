@@ -8,15 +8,15 @@ import {
   CardContent,
   CardActionArea,
 } from '@mui/material';
-import { PlayArrow, CheckCircle } from '@mui/icons-material';
+import { PlayArrow, CheckCircle, Diamond } from '@mui/icons-material';
 
 const technologies = [
   {
     id: 'rails',
     name: 'Ruby on Rails',
     description: 'Ruby fundamentals, Rails framework, Active Record, security, and advanced topics',
-    icon: '💎',
-    color: '#CC0000'
+    icon: 'diamond',
+    color: '#CC342D'
   },
   {
     id: 'node',
@@ -26,18 +26,18 @@ const technologies = [
     color: '#68A063'
   },
   {
-    id: 'react',
-    name: 'React',
-    description: 'Components, hooks, state management, routing, performance, and testing',
-    icon: '⚛️',
-    color: '#61DAFB'
-  },
-  {
     id: 'python',
     name: 'Python',
     description: 'OOP, data structures, Django/Flask, async programming, testing, and performance',
     icon: '🐍',
     color: '#3776AB'
+  },
+  {
+    id: 'react',
+    name: 'React',
+    description: 'Components, hooks, state management, routing, performance, and testing',
+    icon: '⚛️',
+    color: '#61DAFB'
   },
 ];
 
@@ -158,7 +158,13 @@ const HomePage = ({ onStart }) => {
                         }}
                       />
                     )}
-                    <Box sx={{ fontSize: '2.5rem', mb: 2 }}>{tech.icon}</Box>
+                    <Box sx={{ mb: 2 }}>
+                      {tech.icon === 'diamond' ? (
+                        <Diamond sx={{ fontSize: '2.5rem', color: tech.color }} />
+                      ) : (
+                        <Box sx={{ fontSize: '2.5rem' }}>{tech.icon}</Box>
+                      )}
+                    </Box>
                     <Typography
                       variant="h6"
                       sx={{
