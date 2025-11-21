@@ -1,47 +1,113 @@
-# Interview AI Agent
+# Runtime Revolution Technical Interview Agent
 
-An intelligent agent designed to facilitate Ruby on interviews by presenting questions, showing correct answers, enabling scoring and comments, skipping unanswered questions, and generating a comprehensive report to determine candidate level.
+An intelligent multi-technology interview platform designed to facilitate structured technical interviews across Ruby on Rails, Node.js, React, and Python. Features AI-powered insights, comprehensive feedback, and automatic candidate assessment.
 
-![Logo](https://rubyonrails.org/assets/images/logo.svg)
+## 🌟 Features
 
-## Features
+### 📚 Multi-Technology Support
+- **Ruby on Rails**: 20 questions (6 Junior, 9 Mid, 5 Senior)
+- **Node.js**: 20 questions (3 Junior, 11 Mid, 6 Senior)
+- **React**: 12 questions (2 Junior, 6 Mid, 4 Senior)
+- **Python**: 20 questions (4 Junior, 10 Mid, 6 Senior)
+- Questions automatically sorted by difficulty level
+- Technology selection on home page
 
-### 🎯 Core Functionality
+### 🎯 Advanced Question System
+- **Sub-Questions Support**: Break down complex topics into multiple scorable parts
+  - Individual scoring for each sub-question
+  - Automatic average calculation for parent question
+  - Visual indicators (tree icon 🌳) for questions with sub-questions
+- **Code Examples**: Each question includes relevant code snippets
+- **Level Badges**: Visual indicators for Junior, Mid, and Senior questions
+- **Dynamic Question Addition**: Add new questions during interviews
 
-- **Comprehensive Question Bank**: 20 pre-loaded questions covering:
-  - Basic Ruby concepts
-  - Framework fundamentals
-  - Active Record and database operations
-  - Associations and relationships
-  - Modular Applications and Concerns
-  - Engines
-  - Security best practices
-  - Advanced topics
+### 💬 Interactive Interview Process
+- **Clean Sidebar Navigation**: Question list with status indicators
+  - ✓ Green checkmark for answered questions
+  - ⚠️ Orange checkmark for "without knowledge" (0%)
+  - 🌳 Tree icon for questions with sub-questions
+  - Selected question highlighted with green background
+- **Dual Panel Layout**:
+  - Left: Question, expected answer, and code examples
+  - Right: Scoring, comments, and evaluation tools
+- **Scoring Options**:
+  - 0-100% slider for regular questions
+  - Individual scoring for sub-questions
+  - "Without Knowledge" button (automatically sets 0% with feedback)
+- **Code Editor Integration**:
+  - Generate unique shareable links for candidates
+  - 20-character hash format: `XXXXX-XXXXX-XXXXX-XXXXX`
+  - Auto-save every 10 seconds
+  - Visual auto-save indicators
+  - Image support in code editor
+- **Comments & Feedback**: Add detailed notes for each response
 
-- **Interactive Interview Process**:
-  - Present questions one at a time with category labels
-  - Show/hide correct answers for interviewer reference
-  - Input candidate's answers
-  - Score responses with a 0-100% slider
-  - Add detailed comments for each response
-  - Skip questions that aren't relevant
+### 📝 Comprehensive General Feedback
+- **Open-Text Feedback Form** covering:
+  - Communication skills and soft skills
+  - Technical level and experience
+  - Autonomy and work style
+  - Project experience
+  - Learning and growth mindset
+  - Leadership skills
+  - Client management
+  - Strengths and areas for improvement
+  - Runtime Revolution fit
+  - Hiring decision and recommended level
+  - General interview summary
+- **Required Field Validation**: Must provide feedback to finish interview
+- **AI-Powered Transformation**: Converts notes into professional Q&A format
+- **Regeneration Options**:
+  - Retry button on failure
+  - Regenerate button for new AI interpretations
+  - Remove individual Q&A items
 
-- **Intelligent Reporting**:
-  - Automatic candidate level assessment (Junior, Mid, Senior)
-  - Average score calculation
-  - Detailed breakdown of all answered questions
-  - Export report as text file
-  - Visual progress tracking
-  - **AI-Powered Insights**: OpenAI integration for personalized recommendations
+### 🤖 AI-Powered Insights (OpenAI GPT-4)
+- **General Feedback Analysis**: Transforms free-form notes into structured Q&A
+- **Technical Assessment**:
+  - Areas for improvement identification
+  - Strengths analysis
+  - Specific learning resources
+- **Professional Assessment**:
+  - Soft skills evaluation
+  - Runtime Revolution culture fit
+  - Career development path suggestions
+  - Overall hiring recommendation
+- **Configurable**: API key stored in environment variables
 
-- **Beautiful UI**:
-  - Material-UI components
-  - Responsive design
-  - Modern gradient backgrounds
-  - Smooth transitions and animations
-  - Clean, professional interface
+### 📊 Intelligent Reporting
+- **8-Level Assessment System**:
+  - Perfect Senior (100%)
+  - Solid Senior (≥90%)
+  - Beginning Senior (≥75%)
+  - Mid Going to Senior (≥60%)
+  - Solid Mid-Level (≥80% mid)
+  - Beginner Mid-Level (≥60% mid)
+  - Junior Going to Mid-Level (≥70% junior)
+  - Junior Developer (entry level)
+- **Flexible Assessment**: Based only on answered questions (works with any number)
+- **Visual Statistics**:
+  - Average score across all responses
+  - Questions answered count
+  - Level breakdown (Junior/Mid/Senior performance)
+- **General Feedback Display**:
+  - AI-transformed Q&A format
+  - Removable items
+  - Regeneration capability
+- **Export Options**: Download complete report as text file
+- **Sub-Questions Breakdown**: Detailed view of all sub-question scores
 
-## Getting Started
+### 🎨 Modern UI/UX
+- **Clean OpenAI-Inspired Design**:
+  - Lots of whitespace
+  - Subtle borders
+  - Minimal color palette
+- **Responsive Layout**: Works on desktop and tablet
+- **Material-UI Components**: Professional and polished
+- **Real-Time Updates**: Instant feedback on all actions
+- **Visual Progress Tracking**: Progress bar and status indicators
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -50,186 +116,262 @@ An intelligent agent designed to facilitate Ruby on interviews by presenting que
 
 ### Installation
 
-1. Clone the repository:
+1. **Navigate to project directory**:
 ```bash
-cd rails-interview-agent
+cd interviews-agent
 ```
 
-2. Install dependencies:
+2. **Install dependencies**:
 ```bash
 yarn install
 ```
 
-3. Configure environment variables (optional - for AI insights):
+3. **Configure OpenAI API (Required for AI features)**:
 ```bash
 # Create .env file
-cp .env.example .env
-
-# Edit .env and add your OpenAI API key
-VITE_OPENAI_API_KEY=your_openai_api_key_here
+echo "VITE_OPENAI_API_KEY=your_openai_api_key_here" > .env
 ```
 
-4. Start the development server:
+> **Important**: AI features (general feedback transformation and AI insights) require an OpenAI API key. Get one at https://platform.openai.com/api-keys
+
+4. **Start development server**:
 ```bash
 yarn dev
 ```
 
-5. Open your browser and navigate to the local server URL (typically `http://localhost:5173`)
+5. **Open browser** at `http://localhost:5173`
 
-> **Note**: AI insights require an OpenAI API key. The app works fully without it, but AI-powered recommendations won't be available.
+## 📖 Usage Guide
 
-## Usage Guide
+### 1. Select Technology
+- Choose from Ruby on Rails, Node.js, React, or Python
+- Each technology has its own curated question set
+- Technology-specific assessment criteria
 
-### 1. Starting an Interview
+### 2. Conduct Interview
+- Navigate questions using the sidebar
+- View question details, expected answers, and code examples
+- Score responses with the slider (0-100%)
+- For questions with sub-questions:
+  - Score each sub-question individually
+  - Parent score calculated automatically
+- Use "Without Knowledge" for topics candidate doesn't know
+- Add comments and feedback for each question
+- Generate code editor links for practical exercises:
+  - Click "Generate Code Editor Link"
+  - Share 20-character hash link with candidate
+  - Code auto-saves every 10 seconds
+  - Submitted code appears in final report
 
-- Click the "Start Interview" button on the home page
-- You'll be taken to the first question
+### 3. Provide General Feedback
+- Click "General Feedback" button in sidebar
+- Fill in qualitative observations about:
+  - Communication and soft skills
+  - Technical abilities and experience
+  - Autonomy and work style
+  - Leadership and client management
+  - Overall fit and hiring recommendation
+- At least one field required to finish interview
+- Free-form text for maximum flexibility
 
-### 2. During the Interview
+### 4. Review Report
+The comprehensive report includes:
+- **Candidate Level Assessment**: Automatic 8-level evaluation
+- **Performance Statistics**: Average score, questions answered, level breakdown
+- **General Interview Feedback**:
+  - AI-transformed Q&A format
+  - Remove unwanted items
+  - Regenerate for different interpretations
+- **AI-Powered Insights**: Technical + professional analysis
+- **Detailed Question Responses**: All answers with scores and comments
+- **Sub-Questions Breakdown**: Individual sub-question performance
+- **Code Submissions**: Candidate's code for each exercise
+- **Export Option**: Download complete report
 
-- **View Question**: Each question is displayed with its category
-- **Record Answer**: Enter the candidate's response in the text field
-- **Show Correct Answer**: Click the "Show Answer" button to reveal the expected answer
-- **Score Response**: Use the slider to assign a percentage score (0-100%)
-- **Add Comments**: Provide feedback or notes about the response
-- **Navigation**:
-  - Use "Previous" and "Next" buttons to navigate between questions
-  - Use "Skip Question" to exclude a question from the final report
-- **Progress**: Track progress with the progress bar at the top
+### 5. Start New Interview
+- Click "Start New Interview" to return to home page
+- Select same or different technology
+- All previous data cleared
 
-### 3. Finishing the Interview
+## 🎓 Assessment Criteria
 
-- On the last question, click "Finish Interview"
-- You'll be redirected to the comprehensive report page
+The system evaluates candidates based on:
 
-### 4. Reviewing the Report
+- **Questions Answered**: Only answered questions count (flexible system)
+- **Level Performance**:
+  - Junior questions (fundamentals)
+  - Mid questions (practical application)
+  - Senior questions (advanced concepts, architecture)
+- **Weighted Scoring**: Higher weight on matching level questions
+- **Holistic View**: Technical scores + general feedback
 
-The report includes:
-- **Candidate Level Assessment**: Automatic evaluation (Junior, Mid, Senior)
-- **Statistics**:
-  - Average score across all answered questions
-  - Total questions answered
-  - Total questions skipped
-- **AI-Powered Insights**: (if API key configured)
-  - Areas to explore more
-  - Strengths analysis
-  - Feedback summary
-  - Personalized recommendations
-- **Detailed Responses**: Each answered question with scores and comments
-- **Export Option**: Download the report as a text file
-- **Restart Option**: Begin a new interview
+### 8-Level System:
+1. **Perfect Senior** - 100% on all questions
+2. **Solid Senior** - ≥90% senior, ≥85% mid/junior
+3. **Beginning Senior** - ≥75% senior, ≥75% mid/junior
+4. **Mid Going to Senior** - ≥60% senior, ≥70% mid/junior
+5. **Solid Mid-Level** - ≥80% mid, ≥75% junior
+6. **Beginner Mid-Level** - ≥60% mid, ≥70% junior
+7. **Junior Going to Mid** - ≥70% junior, ≥50% mid
+8. **Junior Developer** - Entry level understanding
 
-## Candidate Level Assessment Criteria
+## 🛠️ Technology Stack
 
-The system automatically evaluates candidate level based on:
-
-- **Junior Developer** (< 40% average):
-  - Understanding of basic Ruby and concepts
-  - Needs guidance and mentorship
-
-- **Junior → Mid Transition** (40-55% average):
-  - Fundamental knowledge
-  - Shows promise with proper mentorship
-
-- **Mid-Level Developer** (55-70% average):
-  - Good understanding of MVC, Active Record, and associations
-  - Can work independently on standard features
-
-- **Mid → Senior Transition** (70-80% average):
-  - Solid grasp of fundamentals
-  - Good understanding of advanced concepts
-
-- **Senior Developer** (≥ 80% average + strong advanced topics):
-  - Deep knowledge of and best practices
-  - Strong understanding of security, engines, and modular architecture
-  - Ready for complex challenges and architectural decisions
-
-## Technology Stack
-
-- **Frontend Framework**: React 18+ with Vite
-- **UI Library**: Material-UI (MUI) v6
-- **Styling**: Emotion (CSS-in-JS)
+- **Frontend**: React 18+ with Vite 7
+- **UI Framework**: Material-UI (MUI) v6
+- **Styling**: Emotion CSS-in-JS
 - **Icons**: Material-UI Icons
-- **Build Tool**: Vite 7
+- **AI**: OpenAI GPT-4
+- **Package Manager**: Yarn
+- **Build Tool**: Vite
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-rails-interview-agent/
+interviews-agent/
 ├── src/
 │   ├── components/
-│   │   ├── HomePage.jsx          # Landing page with feature cards
-│   │   ├── InterviewPage.jsx     # Main interview interface
-│   │   └── ReportPage.jsx        # Final report and assessment
+│   │   ├── HomePage.jsx              # Technology selection
+│   │   ├── InterviewPage.jsx         # Main interview UI
+│   │   ├── ReportPage.jsx            # Results and assessment
+│   │   ├── AddQuestionDialog.jsx     # Dynamic question addition
+│   │   ├── GeneralFeedbackDialog.jsx # Feedback collection form
+│   │   ├── CodeEditor.jsx            # Shareable code editor
+│   │   └── AIInsights.jsx            # OpenAI integration
 │   ├── data/
-│   │   └── questions.js          # Question bank
-│   ├── App.jsx                   # Main app component with routing
-│   ├── main.jsx                  # Entry point
-│   └── index.css                 # Global styles
-├── index.html
+│   │   ├── questions_rails.js        # Ruby on Rails questions
+│   │   ├── questions_node.js         # Node.js questions
+│   │   ├── questions_react.js        # React questions
+│   │   └── questions_python.js       # Python questions
+│   ├── App.jsx                       # Main app component
+│   ├── main.jsx                      # Entry point
+│   └── index.css                     # Global styles
+├── .env                              # Environment variables (gitignored)
+├── .env.example                      # Environment template
 ├── package.json
+├── vite.config.js
 └── README.md
 ```
 
-## Customization
+## 🔧 Customization
 
-### Adding New Questions
+### Adding Questions
 
-Edit `src/data/questions.js` and add new question objects:
+Edit the appropriate question file in `src/data/`:
 
 ```javascript
 {
   id: 21,
-  category: "Your Category",
+  category: "Advanced Topic",
+  level: "senior",
+  title: "Short Title",
   question: "Your question here?",
-  correctAnswer: "The expected answer..."
+  correctAnswer: "Expected answer...",
+  codeExample: `// Code example here
+const example = 'code';`,
+  image: "https://example.com/image.png", // Optional
+  hasSubQuestions: true, // Optional
+  subQuestions: [ // Optional
+    {
+      id: 2101,
+      question: "Sub-question 1?",
+      correctAnswer: "Answer...",
+      codeExample: `// Sub-question code`
+    }
+  ]
 }
 ```
 
-### Modifying Assessment Criteria
+### Modifying Assessment
 
-Edit the `getCandidateLevel()` function in `src/components/ReportPage.jsx` to adjust scoring thresholds and level descriptions.
+Edit `getCandidateLevel()` in `src/components/ReportPage.jsx` to adjust:
+- Level thresholds
+- Descriptions
+- Required question counts
+- Weighted scoring logic
 
 ### Styling
 
-The app uses Material-UI theming. Modify the theme in `src/App.jsx`:
+Modify theme in `src/App.jsx`:
 
 ```javascript
 const theme = createTheme({
   palette: {
-    primary: {
-      main: '#CC0000', // red
+    primary: { main: '#10a37f' },
+    secondary: { main: '#8661c5' },
     },
+  typography: {
+    fontFamily: '"Inter", "Segoe UI", sans-serif',
   },
 });
 ```
 
-## Build for Production
+## 📦 Build & Deploy
 
+### Production Build
 ```bash
 yarn build
 ```
 
-The optimized production build will be in the `dist/` directory.
-
-## Preview Production Build
-
+### Preview Build
 ```bash
 yarn preview
 ```
 
-## Contributing
+### Deploy
+Deploy the `dist/` folder to your hosting service (Vercel, Netlify, etc.)
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 🔐 Environment Variables
 
-## License
+```env
+# Required for AI features
+VITE_OPENAI_API_KEY=sk-proj-...
 
-MIT License - feel free to use this project for your interview processes.
+# Optional: Add custom configuration
+VITE_APP_TITLE=Interview Agent
+```
 
-## Support
+## 📝 License
 
-For issues or questions, please open an issue on the GitHub repository.
+MIT License - Feel free to use for your interview processes
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 💡 Tips for Interviewers
+
+1. **Prepare**: Review questions before the interview
+2. **Adapt**: Use "Add Question" to ask follow-ups
+3. **Document**: Use comments field extensively
+4. **General Feedback**: Fill immediately after interview while fresh
+5. **Code Exercises**: Share editor links for practical assessment
+6. **Review AI Insights**: Use as additional perspective, not sole decision
+7. **Export Reports**: Save for future reference and comparison
+
+## 🐛 Troubleshooting
+
+### AI Features Not Working
+- Check `.env` file exists with valid `VITE_OPENAI_API_KEY`
+- Restart dev server after adding `.env`
+- Verify API key at https://platform.openai.com/api-keys
+
+### Code Editor Links Not Working
+- Ensure localStorage is enabled in browser
+- Check that hash format is 20 characters (XXXXX-XXXXX-XXXXX-XXXXX)
+- Clear browser cache if issues persist
+
+### Auto-Save Not Working
+- Check browser console for errors
+- Verify localStorage has space available
+- Ensure code field is not empty (only saves with content)
 
 ---
 
-**Happy Interviewing! 🚀**
+**Built for Runtime Revolution Technical Interviews 🚀**
+
+For support or questions, contact your development team.

@@ -1,0 +1,514 @@
+# Runtime Revolution Technical Interview Agent - Cursor Rules
+
+## Project Overview
+
+This is a React + Vite application for conducting structured technical interviews across multiple technologies (Ruby on Rails, Node.js, React, Python). The app features AI-powered insights, comprehensive feedback collection, and intelligent candidate assessment.
+
+## Technology Stack
+
+- **Frontend**: React 18+ with functional components and hooks
+- **Build Tool**: Vite 7
+- **UI Library**: Material-UI (MUI) v6
+- **Styling**: Emotion CSS-in-JS, inline `sx` prop
+- **Icons**: Material-UI Icons (@mui/icons-material)
+- **AI**: OpenAI GPT-4 API
+- **Package Manager**: Yarn (NOT npm)
+- **State Management**: React useState, props drilling
+- **Storage**: localStorage for code editor sessions
+
+## Code Style & Conventions
+
+### General Rules
+
+1. **Functional Components Only**: Use function declarations, not arrow functions for components
+   ```javascript
+   // ✅ GOOD
+   export default function HomePage({ onStart }) {
+     return <div>...</div>;
+   }
+
+   // ❌ AVOID
+   const HomePage = ({ onStart }) => {
+     return <div>...</div>;
+   };
+   ```
+
+2. **Hooks at Top**: All hooks must be at the top of the component, before any logic
+   ```javascript
+   function MyComponent() {
+     // ✅ Hooks first
+     const [state, setState] = useState(null);
+     const [loading, setLoading] = useState(false);
+
+     // Then other logic
+     const handleClick = () => { };
+
+     return <div>...</div>;
+   }
+   ```
+
+3. **Material-UI Styling**: Use `sx` prop for styling, not styled components
+   ```javascript
+   // ✅ GOOD
+   <Box sx={{ p: 3, backgroundColor: '#f9fafb' }}>
+
+   // ❌ AVOID
+   const StyledBox = styled(Box)({ padding: 24 });
+   ```
+
+4. **Imports Order**:
+   ```javascript
+   // 1. React imports
+   import { useState, useEffect } from 'react';
+
+   // 2. Third-party imports (alphabetical)
+   import { Box, Button, Typography } from '@mui/material';
+   import { Add, Check } from '@mui/icons-material';
+
+   // 3. Local imports (alphabetical)
+   import AIInsights from './AIInsights';
+   import questions_rails from '../data/questions_rails';
+   ```
+
+5. **No Semicolons**: Code style is without semicolons (consistent with existing codebase)
+
+### Naming Conventions
+
+- **Components**: PascalCase (e.g., `HomePage`, `InterviewPage`, `AIInsights`)
+- **Files**: Match component name (e.g., `HomePage.jsx`, not `homePage.jsx`)
+- **Functions**: camelCase (e.g., `handleSubmit`, `getCandidateLevel`)
+- **Constants**: camelCase or UPPER_SNAKE_CASE for true constants
+- **Props**: camelCase (e.g., `onStart`, `selectedTechnology`)
+- **State**: Descriptive camelCase (e.g., `interviewData`, `currentIndex`)
+
+### File Organization
+
+```
+src/
+├── components/           # All React components
+│   ├── HomePage.jsx
+│   ├── InterviewPage.jsx
+│   ├── ReportPage.jsx
+│   ├── AddQuestionDialog.jsx
+│   ├── GeneralFeedbackDialog.jsx
+│   ├── CodeEditor.jsx
+│   └── AIInsights.jsx
+├── data/                 # Question banks
+│   ├── questions_rails.js
+│   ├── questions_node.js
+│   ├── questions_react.js
+│   └── questions_python.js
+├── App.jsx               # Main app with routing logic
+├── main.jsx              # Entry point
+└── index.css             # Global styles only
+```
+
+## Component Patterns
+
+### 1. State Management Pattern
+
+State is managed at the highest necessary level (usually `App.jsx`) and passed down via props:
+
+```javascript
+// App.jsx holds main state
+const [interviewData, setInterviewData] = useState([])
+const [selectedTechnology, setSelectedTechnology] = useState(null)
+const [generalFeedback, setGeneralFeedback] = useState({})
+
+// Pass down to children
+<InterviewPage
+  questions={interviewData}
+  onUpdate={handleUpdateQuestion}
+  generalFeedback={generalFeedback}
+  onGeneralFeedbackChange={setGeneralFeedback}
+/>
+```
+
+### 2. Question Data Structure
+
+Questions must follow this exact structure:
+
+```javascript
+{
+  id: 1,                          // Unique number
+  category: "Category Name",      // String
+  level: "junior",                // "junior" | "mid" | "senior"
+  title: "Short Title",           // Brief description
+  question: "Full question?",     // Complete question text
+  correctAnswer: "Answer...",     // Expected answer
+  codeExample: `code here`,       // Template literal with code
+  image: "https://...",           // Optional: image URL
+
+  // For questions with sub-questions
+  hasSubQuestions: true,          // Optional: boolean
+  subQuestions: [                 // Optional: array
+    {
+      id: 101,                    // Unique sub-question ID
+      question: "Sub question?",
+      correctAnswer: "Answer...",
+      codeExample: `code here`
+    }
+  ],
+
+  // Runtime fields (added during interview)
+  score: null,                    // 0-100 or null
+  comment: "",                    // String
+  candidateCode: ""               // Optional: from code editor
+}
+```
+
+### 3. Interview Data Pattern
+
+When managing interview state, always include runtime fields:
+
+```javascript
+// When starting interview
+const startInterview = (technology) => {
+  const questions = questionsByTech[technology]
+  setInterviewData(
+    questions.map(q => ({
+      ...q,
+      score: null,
+      comment: '',
+      candidateCode: '',
+      subQuestions: q.subQuestions ?
+        q.subQuestions.map(sq => ({
+          ...sq,
+          score: null,
+          comment: ''
+        })) : undefined
+    }))
+  )
+}
+```
+
+### 4. Sub-Question Score Calculation
+
+Always calculate parent score as average of sub-question scores:
+
+```javascript
+// Calculate average score for sub-questions
+const subQuestionScores = question.subQuestions
+  .map(sq => sq.score)
+  .filter(score => score !== null)
+
+const averageScore = subQuestionScores.length > 0
+  ? Math.round(subQuestionScores.reduce((a, b) => a + b, 0) / subQuestionScores.length)
+  : null
+```
+
+### 5. Code Editor Hash Generation
+
+Use this exact pattern for generating shareable links:
+
+```javascript
+const generateHash = () => {
+  const timestamp = Date.now().toString(36)
+  const randomStr = Math.random().toString(36).substring(2)
+  const combined = (timestamp + randomStr).substring(0, 20)
+
+  // Format as XXXXX-XXXXX-XXXXX-XXXXX
+  return combined.match(/.{1,5}/g).join('-')
+}
+```
+
+### 6. LocalStorage Pattern
+
+For code editor persistence:
+
+```javascript
+// Save
+const sessionData = {
+  questionInfo: { title, question, image, technology },
+  code: codeText,
+  timestamp: new Date().toISOString()
+}
+localStorage.setItem(`code_session_${hash}`, JSON.stringify(sessionData))
+
+// Load
+const saved = localStorage.getItem(`code_session_${hash}`)
+if (saved) {
+  const { code, questionInfo } = JSON.parse(saved)
+}
+```
+
+## Material-UI Patterns
+
+### Color Palette
+
+Stick to these colors for consistency:
+
+```javascript
+// Primary colors
+primary: '#10a37f'      // Green (buttons, accents)
+secondary: '#8661c5'    // Purple (sub-questions, special features)
+
+// Level colors
+junior: '#4caf50'       // Green
+mid: '#ff9800'          // Orange
+senior: '#f44336'       // Red
+
+// Status colors
+success: '#10a37f'      // Answered questions
+warning: '#ff9800'      // "Without knowledge" (0%)
+error: '#f44336'        // Errors
+
+// Neutrals
+background: '#f9fafb'   // Light gray
+text: '#2d333a'         // Dark gray
+border: '#e5e5e5'       // Light border
+```
+
+### Common Component Patterns
+
+```javascript
+// Section Container
+<Box sx={{ p: 3, mb: 3, border: '1px solid #e5e5e5', borderRadius: 2 }}>
+
+// Card
+<Paper elevation={0} sx={{ p: 3, border: '1px solid #e5e5e5' }}>
+
+// Button Primary
+<Button variant="contained" sx={{ backgroundColor: '#10a37f' }}>
+
+// Button Secondary
+<Button variant="outlined" sx={{ borderColor: '#e5e5e5', color: '#2d333a' }}>
+
+// Chip (Level Badge)
+<Chip
+  label="Junior"
+  size="small"
+  sx={{ backgroundColor: '#4caf50', color: 'white' }}
+/>
+```
+
+## AI Integration Rules
+
+### 1. OpenAI API Pattern
+
+Always use this structure for API calls:
+
+```javascript
+const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+
+if (!apiKey) {
+  setError('OpenAI API key not configured')
+  return
+}
+
+try {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: 'You are...' },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    })
+  })
+
+  if (!response.ok) throw new Error('API request failed')
+
+  const data = await response.json()
+  const result = data.choices[0].message.content
+
+} catch (error) {
+  console.error('OpenAI API Error:', error)
+  setError('Failed to generate insights')
+}
+```
+
+### 2. AI Prompt Guidelines
+
+- Be specific about output format (e.g., "Return a JSON array")
+- Include technology name in prompts for context
+- Request professional, formal tone
+- Specify max length/sections needed
+- Handle empty or malformed responses gracefully
+
+## Assessment Logic
+
+### Level Calculation Pattern
+
+The 8-level system must follow this order:
+
+```javascript
+// 1. Perfect Senior - 100% on everything
+// 2. Solid Senior - ≥90% senior, ≥85% others
+// 3. Beginning Senior - ≥75% senior, ≥75% others
+// 4. Mid → Senior - ≥60% senior, ≥70% others
+// 5. Solid Mid - ≥80% mid, ≥75% junior
+// 6. Beginner Mid - ≥60% mid, ≥70% junior
+// 7. Junior → Mid - ≥70% junior, ≥50% mid
+// 8. Junior Developer - Entry level
+
+// Only consider ANSWERED questions, not total questions
+const answeredQuestions = interviewData.filter(q => q.score !== null)
+```
+
+## Common Operations
+
+### Updating a Question
+
+```javascript
+const handleUpdateQuestion = (index, field, value) => {
+  setInterviewData(prev =>
+    prev.map((q, i) =>
+      i === index ? { ...q, [field]: value } : q
+    )
+  )
+}
+```
+
+### Updating a Sub-Question
+
+```javascript
+const handleUpdateSubQuestion = (questionIndex, subIndex, field, value) => {
+  setInterviewData(prev =>
+    prev.map((q, i) => {
+      if (i !== questionIndex) return q
+
+      const updatedSubQuestions = q.subQuestions.map((sq, si) =>
+        si === subIndex ? { ...sq, [field]: value } : sq
+      )
+
+      return { ...q, subQuestions: updatedSubQuestions }
+    })
+  )
+}
+```
+
+### Progress Calculation
+
+```javascript
+const answeredCount = questions.filter(q => q.score !== null).length
+const progress = (answeredCount / questions.length) * 100
+```
+
+## What to AVOID
+
+1. **DON'T use class components** - Only functional components
+2. **DON'T use Redux or Context API** - State management is intentionally simple with props
+3. **DON'T use CSS files for components** - Use MUI `sx` prop
+4. **DON'T use styled-components** - Use inline `sx` styling
+5. **DON'T hardcode API keys** - Always use environment variables
+6. **DON'T use npm** - Use yarn for all package management
+7. **DON'T create backend logic** - This is a frontend-only app
+8. **DON'T persist interview data** - Only code editor uses localStorage
+9. **DON'DO add database** - All data is in-memory during interview
+10. **DON'T modify question files during interview** - Questions are read-only, runtime data separate
+
+## Testing Checklist
+
+When making changes, verify:
+
+- [ ] Technology selection works for all 4 technologies
+- [ ] Question navigation (previous/next) works
+- [ ] Sub-question scoring calculates averages correctly
+- [ ] "Without Knowledge" sets 0% and adds comment
+- [ ] Code editor link generation creates valid hash
+- [ ] Auto-save works every 10 seconds in code editor
+- [ ] General feedback validates at least one field
+- [ ] "Finish Interview" button enables after feedback
+- [ ] Report shows correct assessment level
+- [ ] AI transformation works (if API key configured)
+- [ ] Export generates proper .txt file
+- [ ] "Start New Interview" resets all state
+
+## Performance Considerations
+
+1. **Avoid unnecessary re-renders**: Use React.memo() only if needed
+2. **Code examples can be large**: Consider lazy loading if performance issues
+3. **LocalStorage limits**: ~5-10MB, sufficient for code editor
+4. **AI API calls**: Show loading states, implement retry logic
+5. **Large question lists**: Current sizes (20 questions) are fine, no virtualization needed
+
+## Accessibility
+
+- Use semantic HTML elements
+- Provide ARIA labels for icons without text
+- Ensure keyboard navigation works
+- Maintain color contrast ratios (AA standard)
+- Use descriptive button text (avoid just icons)
+
+## Environment Variables
+
+Only one environment variable is used:
+
+```env
+VITE_OPENAI_API_KEY=sk-proj-...
+```
+
+- Must start with `VITE_` for Vite to expose to client
+- Store in `.env` file (git-ignored)
+- Access via `import.meta.env.VITE_OPENAI_API_KEY`
+- Check existence before use, show helpful error if missing
+
+## Common Pitfalls
+
+1. **Forgetting to restart dev server after .env changes** - Required for env vars
+2. **Not handling null scores** - Always check `score !== null` not just `score`
+3. **Modifying state directly** - Always use setState, never `state.property = value`
+4. **Incorrect sub-question ID format** - Use parent ID + 01, 02 (e.g., 801, 802 for parent 8)
+5. **Missing sub-question average calculation** - Parent score must be calculated
+6. **Hardcoding technology names** - Use `selectedTechnology` state
+7. **Not filtering answered questions** - Assessment should only consider answered
+8. **Forgetting to map sub-questions when starting interview** - They need score fields too
+
+## Git Workflow
+
+- `.env` is git-ignored (contains API key)
+- All documentation files should be kept up-to-date
+- Test locally before committing
+- Use descriptive commit messages
+- Keep components in separate files (no combining)
+
+## Build & Deploy
+
+```bash
+# Development
+yarn dev
+
+# Production build
+yarn build
+
+# Preview production
+yarn preview
+
+# Lint
+yarn lint
+```
+
+Deploy the `dist/` folder to hosting (Vercel, Netlify, etc.)
+
+## Documentation Standards
+
+When updating features:
+1. Update relevant .md files (README, FEATURES, etc.)
+2. Add examples for complex features
+3. Update troubleshooting sections
+4. Keep component documentation in sync with code
+5. Add inline comments for complex logic
+
+## Questions?
+
+Refer to:
+- README.md - Complete documentation
+- FEATURES.md - Feature details
+- APP_FLOW.md - Application flow
+- AI_SETUP.md - OpenAI configuration
+- Project source code for implementation examples
+
+---
+
+**Last Updated**: 2024-11-21
+**Version**: 2.0.0
+**Maintainer**: Runtime Revolution Development Team
+

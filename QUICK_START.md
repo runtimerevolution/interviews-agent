@@ -1,108 +1,255 @@
 # Quick Start Guide
 
-## 🚀 Get Started in 3 Steps
+Get up and running with the Runtime Revolution Technical Interview Agent in 5 minutes!
+
+## ⚡ Quick Setup
 
 ### 1. Install Dependencies
 ```bash
+cd interviews-agent
 yarn install
 ```
 
-### 2. Configure AI Insights (Optional)
+### 2. Configure OpenAI API (Required)
 ```bash
-# Create .env file from example
-cp .env.example .env
-
-# Edit .env and add your OpenAI API key
-# VITE_OPENAI_API_KEY=sk-your-key-here
+# Create .env file
+echo "VITE_OPENAI_API_KEY=your_api_key_here" > .env
 ```
 
-> **Note**: AI insights are optional. The app works fully without an API key.
+> Get your API key at https://platform.openai.com/api-keys
 
 ### 3. Start Development Server
 ```bash
 yarn dev
 ```
 
-### 4. Open in Browser
-Navigate to `http://localhost:5173` (or the URL shown in your terminal)
+### 4. Open Browser
+Navigate to `http://localhost:5173`
 
-## 📋 Interview Workflow
+## 🎯 Quick Interview Flow
 
-### Step 1: Home Page
-- Review the features and capabilities
-- Click **"Start Interview"** when ready
+### Step 1: Select Technology
+Click on one of the four technology cards:
+- 💎 Ruby on Rails
+- 🟢 Node.js
+- ⚛️ React
+- 🐍 Python
 
 ### Step 2: Conduct Interview
-For each question:
-1. **Read the question** to the candidate
-2. **Record their answer** in the text field
-3. **Show the correct answer** (click button) for your reference
-4. **Score the response** using the slider (0-100%)
-5. **Add comments** about their answer
-6. **Navigate** to the next question or **skip** if not applicable
 
-### Step 3: Generate Report
-- Click **"Finish Interview"** on the last question
-- Review the comprehensive report with:
-  - Automatic level assessment (Junior/Mid/Senior)
-  - Average score
-  - Detailed breakdown of all answers
-- **Export** the report as a text file
-- **Restart** to begin a new interview
+**Sidebar (Left)**:
+- View all questions with titles and levels
+- Track progress with visual indicators
+- See which questions have sub-questions (🌳 icon)
+- Selected question shows green background
 
-## 🎯 Question Categories
+**Main Area (Right)**:
+- Read question and expected answer
+- View code examples
+- Score response (0-100% slider)
+- For sub-questions: Score each individually
+- Add comments
+- Use "Without Knowledge" for 0% + auto-comment
+- Generate code editor links for practical exercises
 
-The interview covers 20 questions across:
-- **Basic Ruby** (3 questions)
-- **Rails Framework** (3 questions)
-- **Active Record** (3 questions)
-- **Associations** (3 questions)
-- **Modular Applications** (2 questions)
-- **Engines** (2 questions)
-- **Security** (3 questions)
-- **Advanced Topics** (1 question)
+**Key Actions**:
+- **Navigate**: Click questions in sidebar
+- **Score**: Drag slider or click markers
+- **Comment**: Type in feedback field
+- **Code Exercise**: Click "Generate Code Editor Link" → Copy → Share
+- **Add Question**: Use "+ Add Question" button for follow-ups
 
-## 💡 Tips for Interviewers
+### Step 3: General Feedback (Required)
 
-1. **Show Answer Strategically**: Wait for the candidate to answer before revealing the correct answer
-2. **Score Fairly**: Use the full 0-100% range based on:
-   - Accuracy of the answer
-   - Depth of understanding
-   - Practical knowledge
-3. **Add Meaningful Comments**: Note strengths, weaknesses, and areas for improvement
-4. **Skip When Appropriate**: If a question isn't relevant to the role, skip it
-5. **Review Report**: Use the final assessment as a starting point for your decision
+Click "General Feedback" button in sidebar:
+- Fill in at least ONE field about the candidate
+- Cover soft skills, technical abilities, strengths, areas for improvement
+- Add hiring decision and recommended level
+- Save to unlock "Finish Interview" button
 
-## 🔧 Troubleshooting
+### Step 4: Review Report
+
+Report includes:
+- **Left Panel**: Level assessment, score, statistics
+- **Right Panel**:
+  - Assessment description
+  - General feedback (AI-transformed Q&A)
+    - Click "Regenerate" for different interpretation
+    - Click "×" to remove unwanted items
+  - AI Insights (technical + professional)
+  - All question responses with scores
+
+**Actions**:
+- **Export**: Download .txt report
+- **Start New**: Begin another interview
+
+## 🎨 Quick Tips
+
+### For Best Results
+
+1. **Prepare Questions**:
+   - Review questions before interview
+   - Know which are Junior/Mid/Senior
+   - Note which have sub-questions (🌳)
+
+2. **During Interview**:
+   - Score immediately while fresh
+   - Add detailed comments
+   - Use "Without Knowledge" liberally
+   - Generate code editor links for practical tasks
+
+3. **General Feedback**:
+   - Fill immediately after interview
+   - Be specific and detailed
+   - Include concrete examples
+   - AI will transform into professional Q&A
+
+4. **Review Report**:
+   - Check AI-generated feedback
+   - Remove irrelevant Q&A items
+   - Regenerate if needed
+   - Export for records
+
+### Keyboard Shortcuts
+
+- **Tab**: Navigate between fields
+- **Enter**: In comment field = new line
+- **Cmd/Ctrl + C**: Copy code editor link (after clicking copy button)
+
+## 🔧 Configuration
+
+### Optional Settings
+
+**Environment Variables** (`.env`):
+```env
+# Required for AI features
+VITE_OPENAI_API_KEY=sk-proj-...
+
+# Optional custom settings
+VITE_APP_TITLE=Interview Agent
+```
+
+## 📱 Using Code Editor
+
+### Interviewer (You):
+1. Click "Generate Code Editor Link" on any question
+2. Copy the link (20-character hash)
+3. Share with candidate via chat/email
+4. Link format: `http://localhost:5173/abcde-fghij-klmno-pqrst`
+
+### Candidate (Them):
+1. Open shared link
+2. See question and optional image
+3. Write code in editor
+4. Code auto-saves every 10 seconds
+5. Click "Save Code" when done
+6. Code appears in your report
+
+## 🐛 Troubleshooting
+
+### AI Features Not Working
+```bash
+# Check .env file exists
+cat .env
+
+# Should show: VITE_OPENAI_API_KEY=sk-...
+
+# Restart server after adding .env
+# Press Ctrl+C then:
+yarn dev
+```
 
 ### Port Already in Use
-If port 5173 is in use, Vite will automatically try the next available port.
+```bash
+# Kill process on port 5173
+lsof -ti:5173 | xargs kill -9
 
-### Slow Performance
-Clear browser cache or try a different browser.
+# Or use different port
+yarn dev --port 3000
+```
 
-### Questions Not Showing
-Ensure you've run `yarn install` to install all dependencies.
+### Clear Cache
+```bash
+# Remove node_modules and reinstall
+rm -rf node_modules yarn.lock
+yarn install
+```
 
-## 📦 Build for Production
+## 📚 Learn More
+
+- **Full Documentation**: [README.md](README.md)
+- **Feature Details**: [FEATURES.md](FEATURES.md)
+- **AI Setup Guide**: [AI_SETUP.md](AI_SETUP.md)
+- **App Flow**: [APP_FLOW.md](APP_FLOW.md)
+
+## 🎯 Interview Checklist
+
+Before starting an interview:
+
+- [ ] Server running (`yarn dev`)
+- [ ] OpenAI API key configured
+- [ ] Technology selected
+- [ ] Questions reviewed
+- [ ] Code editor links ready (if needed)
+- [ ] Notepad for quick notes during interview
+
+During interview:
+
+- [ ] Score each question
+- [ ] Add comments
+- [ ] Use sub-questions when available
+- [ ] Share code editor links for exercises
+- [ ] Take notes for general feedback
+
+After interview:
+
+- [ ] Fill general feedback form
+- [ ] Review AI-transformed feedback
+- [ ] Remove/regenerate as needed
+- [ ] Check AI insights
+- [ ] Export report
+- [ ] Save for records
+
+## 🚀 Production Build
+
+When ready to deploy:
 
 ```bash
+# Build for production
 yarn build
-```
 
-Then preview the production build:
-```bash
+# Preview production build
 yarn preview
+
+# Deploy dist/ folder to hosting service
+# (Vercel, Netlify, AWS S3, etc.)
 ```
 
-## 🎨 Customization
+## 💡 Pro Tips
 
-See the main README.md for details on:
-- Adding custom questions
-- Modifying assessment criteria
-- Customizing the theme and styling
+1. **Multi-Monitor Setup**:
+   - Code editor link on candidate's screen
+   - Your interview interface on your screen
+
+2. **Time Management**:
+   - 3-5 minutes per question
+   - 5-10 minutes for code exercises
+   - 5 minutes for general feedback
+
+3. **Scoring Guide**:
+   - 90-100%: Perfect answer
+   - 70-89%: Good understanding
+   - 50-69%: Partial understanding
+   - 30-49%: Weak understanding
+   - 0-29%: Little to no understanding
+   - 0%: Without knowledge
+
+4. **Comment Templates**:
+   - "Good explanation of..."
+   - "Missed key point about..."
+   - "Could improve on..."
+   - "Excellent understanding of..."
 
 ---
 
-**Ready to start interviewing? Run `yarn dev` and open your browser!**
-
+**Ready to conduct your first interview? Run `yarn dev` and select a technology!** 🎉
