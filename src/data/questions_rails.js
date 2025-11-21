@@ -7,7 +7,6 @@ export const questions = [
     "question": "Explain the difference between '==' and 'equal?' in Ruby.",
     "correctAnswer": "'==' checks for value equality (can be overridden), while 'equal?' checks for object identity (same object in memory). For example, two strings with the same content are == but not equal? unless they're the same object.",
     "codeExample": "a = \"hello\"\nb = \"hello\"\nc = a\n\n# Value equality (content comparison)\na == b        # => true\n\n# Object identity (same object in memory)\na.equal?(b)   # => false\na.equal?(c)   # => true\n\n# With numbers (integers are cached)\nx = 5\ny = 5\nx == y        # => true\nx.equal?(y)   # => true (small integers reuse same object)",
-    "image": "https://picsum.photos/id/10/800/400"
   },
   {
     "id": 2,
