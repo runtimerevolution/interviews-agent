@@ -157,12 +157,15 @@ const ReportPage = ({ interviewData, technology = 'rails', technologyName = 'Rub
 
   // Transform general feedback into Q&A format using OpenAI
   const transformFeedback = async () => {
-    if (!generalFeedback || Object.keys(generalFeedback).length === 0) {
+    if (!generalFeedback) {
       return;
     }
 
     // Check if there's any filled feedback
-    const hasContent = Object.values(generalFeedback).some(value => value && value.trim());
+    const hasContent = typeof generalFeedback === 'string'
+      ? generalFeedback.trim().length > 0
+      : (typeof generalFeedback === 'object' && Object.values(generalFeedback).some(value => value && value.trim()));
+
     if (!hasContent) {
       return;
     }
@@ -178,13 +181,9 @@ const ReportPage = ({ interviewData, technology = 'rails', technologyName = 'Rub
 
     try {
       // Prepare feedback text
-      const feedbackEntries = Object.entries(generalFeedback)
-        .filter(([, value]) => value && value.trim())
-        .map(([key, value]) => {
-          const fieldName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-          return `${fieldName}: ${value}`;
-        })
-        .join('\n\n');
+      const feedbackText = typeof generalFeedback === 'string'
+        ? generalFeedback
+        : JSON.stringify(generalFeedback);
 
       const prompt = `You are a professional HR assistant. Transform the following interview feedback notes into well-structured questions and answers.
 
@@ -195,7 +194,7 @@ For each feedback point, create:
 Make the answers clear, professional, and comprehensive. Fix any grammar or spelling issues. Keep the tone professional but friendly.
 
 Feedback notes:
-${feedbackEntries}
+${feedbackText}
 
 Return ONLY a JSON array in this exact format:
 [
@@ -279,24 +278,18 @@ GENERAL INTERVIEW FEEDBACK (Q&A):
 
 ${qaText}
 `;
-    } else if (generalFeedback && Object.keys(generalFeedback).length > 0) {
-      const feedbackText = Object.entries(generalFeedback)
-        .filter(([, value]) => value && value.trim())
-        .map(([key, value]) => {
-          const title = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-          return `${title}:\n${value}`;
-        })
-        .join('\n\n');
+    } else if (generalFeedback && generalFeedback.trim()) {
+      const feedbackText = typeof generalFeedback === 'string'
+        ? generalFeedback
+        : JSON.stringify(generalFeedback, null, 2);
 
-      if (feedbackText) {
-        generalFeedbackSection = `
+      generalFeedbackSection = `
 
 GENERAL INTERVIEW FEEDBACK:
 ---------------------------
 
 ${feedbackText}
 `;
-      }
     }
 
     const reportText = `
@@ -508,7 +501,7 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
           </Paper>
 
           {/* General Feedback Section */}
-          {generalFeedback && Object.keys(generalFeedback).length > 0 && Object.values(generalFeedback).some(v => v && v.trim()) && (
+          {generalFeedback && (typeof generalFeedback === 'string' ? generalFeedback.trim().length > 0 : (Object.keys(generalFeedback).length > 0 && Object.values(generalFeedback).some(v => v && v.trim()))) && (
             <Paper
               elevation={0}
               sx={{
@@ -635,6 +628,36 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
                 <Box sx={{ p: 3, bgcolor: '#f9fafb', borderRadius: 1 }}>
                   <Typography variant="body2" sx={{ color: '#605e5c', fontStyle: 'italic' }}>
                     Processing feedback...
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Raw Feedback Section - Always show if feedback exists */}
+              {!loadingFeedback && generalFeedback && (
+                <Box sx={{ mt: 3, p: 3, bgcolor: '#fafafa', borderRadius: 1, border: '1px solid #e5e7eb' }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: '#605e5c',
+                      fontWeight: 600,
+                      display: 'block',
+                      mb: 2,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}
+                  >
+                    Original Notes
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#605e5c',
+                      lineHeight: 1.6,
+                      fontSize: '0.875rem',
+                      whiteSpace: 'pre-wrap'
+                    }}
+                  >
+                    {typeof generalFeedback === 'string' ? generalFeedback : JSON.stringify(generalFeedback, null, 2)}
                   </Typography>
                 </Box>
               )}

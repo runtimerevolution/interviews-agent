@@ -149,7 +149,7 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
           </Typography>
           <Box sx={{ mb: 2 }}>
             <Typography variant="caption" sx={{ color: '#6e6e80', mb: 1, display: 'block', fontSize: '0.75rem' }}>
-              {questions.length} answered
+              {parseInt(answeredCount)} answered
             </Typography>
             <Box
               sx={{
