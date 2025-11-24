@@ -21,6 +21,7 @@ import {
   Assignment,
   AccountTree,
 } from '@mui/icons-material';
+import ReactMarkdown from 'react-markdown';
 import AddQuestionDialog from './AddQuestionDialog';
 import GeneralFeedbackDialog from './GeneralFeedbackDialog';
 
@@ -431,18 +432,74 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
             >
               QUESTION
             </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 500,
-                color: '#2d333a',
-                mb: 5,
-                lineHeight: 1.6,
-                fontSize: '1.125rem',
-              }}
-            >
-              {currentQuestion.question}
-            </Typography>
+            <Box sx={{ mb: 5 }}>
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => (
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 500,
+                        color: '#2d333a',
+                        lineHeight: 1.6,
+                        fontSize: '1.125rem',
+                        mb: 2,
+                        '&:last-child': { mb: 0 },
+                      }}
+                    >
+                      {children}
+                    </Typography>
+                  ),
+                  ul: ({ children }) => (
+                    <Box component="ul" sx={{ pl: 3, my: 1.5 }}>
+                      {children}
+                    </Box>
+                  ),
+                  ol: ({ children }) => (
+                    <Box component="ol" sx={{ pl: 3, my: 1.5 }}>
+                      {children}
+                    </Box>
+                  ),
+                  li: ({ children }) => (
+                    <Typography
+                      component="li"
+                      variant="body1"
+                      sx={{
+                        color: '#2d333a',
+                        lineHeight: 1.6,
+                        fontSize: '1rem',
+                        mb: 0.75,
+                      }}
+                    >
+                      {children}
+                    </Typography>
+                  ),
+                  code: ({ children }) => (
+                    <Box
+                      component="code"
+                      sx={{
+                        px: 0.75,
+                        py: 0.25,
+                        bgcolor: '#e5e7eb',
+                        borderRadius: 0.5,
+                        fontSize: '0.9375rem',
+                        fontFamily: '"SF Mono", "Monaco", "Inconsolata", monospace',
+                        color: '#d13438',
+                      }}
+                    >
+                      {children}
+                    </Box>
+                  ),
+                  strong: ({ children }) => (
+                    <Box component="strong" sx={{ fontWeight: 600, color: '#2d333a' }}>
+                      {children}
+                    </Box>
+                  ),
+                }}
+              >
+                {currentQuestion.question}
+              </ReactMarkdown>
+            </Box>
 
             <Typography
               variant="body2"
@@ -465,16 +522,91 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
                 mb: 4,
               }}
             >
-              <Typography
-                variant="body2"
-                sx={{
-                  color: '#2d333a',
-                  lineHeight: 1.7,
-                  fontSize: '0.9375rem',
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: '#2d333a',
+                        lineHeight: 1.7,
+                        fontSize: '0.9375rem',
+                        mb: 2,
+                        '&:last-child': { mb: 0 },
+                      }}
+                    >
+                      {children}
+                    </Typography>
+                  ),
+                  ul: ({ children }) => (
+                    <Box component="ul" sx={{ pl: 3, my: 1 }}>
+                      {children}
+                    </Box>
+                  ),
+                  ol: ({ children }) => (
+                    <Box component="ol" sx={{ pl: 3, my: 1 }}>
+                      {children}
+                    </Box>
+                  ),
+                  li: ({ children }) => (
+                    <Typography
+                      component="li"
+                      variant="body2"
+                      sx={{
+                        color: '#2d333a',
+                        lineHeight: 1.7,
+                        fontSize: '0.9375rem',
+                        mb: 0.5,
+                      }}
+                    >
+                      {children}
+                    </Typography>
+                  ),
+                  code: ({ children, ...props }) => {
+                    const isInline = !props.className;
+                    return isInline ? (
+                      <Box
+                        component="code"
+                        sx={{
+                          px: 0.75,
+                          py: 0.25,
+                          bgcolor: '#e5e7eb',
+                          borderRadius: 0.5,
+                          fontSize: '0.875rem',
+                          fontFamily: '"SF Mono", "Monaco", "Inconsolata", monospace',
+                          color: '#d13438',
+                        }}
+                      >
+                        {children}
+                      </Box>
+                    ) : (
+                      <Box
+                        component="code"
+                        sx={{
+                          display: 'block',
+                          p: 2,
+                          bgcolor: '#0d1117',
+                          color: '#e6edf3',
+                          borderRadius: 1,
+                          fontSize: '0.8125rem',
+                          lineHeight: 1.6,
+                          fontFamily: '"SF Mono", "Monaco", "Inconsolata", monospace',
+                          overflow: 'auto',
+                        }}
+                      >
+                        {children}
+                      </Box>
+                    );
+                  },
+                  strong: ({ children }) => (
+                    <Box component="strong" sx={{ fontWeight: 600, color: '#2d333a' }}>
+                      {children}
+                    </Box>
+                  ),
                 }}
               >
                 {currentQuestion.correctAnswer}
-              </Typography>
+              </ReactMarkdown>
             </Box>
 
             {currentQuestion.hasSubQuestions && currentQuestion.subQuestions && (
@@ -513,28 +645,159 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
                     >
                       Sub-question {idx + 1}
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#2d333a',
-                        fontWeight: 500,
-                        mb: 1.5,
-                        fontSize: '0.9375rem',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {subQuestion.question}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: '#2d333a',
-                        lineHeight: 1.7,
-                        fontSize: '0.875rem',
+                    <Box sx={{ mb: 1.5 }}>
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#2d333a',
+                                fontWeight: 500,
+                                fontSize: '0.9375rem',
+                                lineHeight: 1.6,
+                                mb: 1,
+                                '&:last-child': { mb: 0 },
+                              }}
+                            >
+                              {children}
+                            </Typography>
+                          ),
+                          ul: ({ children }) => (
+                            <Box component="ul" sx={{ pl: 2.5, my: 1 }}>
+                              {children}
+                            </Box>
+                          ),
+                          ol: ({ children }) => (
+                            <Box component="ol" sx={{ pl: 2.5, my: 1 }}>
+                              {children}
+                            </Box>
+                          ),
+                          li: ({ children }) => (
+                            <Typography
+                              component="li"
+                              variant="body2"
+                              sx={{
+                                color: '#2d333a',
+                                lineHeight: 1.6,
+                                fontSize: '0.875rem',
+                                mb: 0.5,
+                              }}
+                            >
+                              {children}
+                            </Typography>
+                          ),
+                          code: ({ children }) => (
+                            <Box
+                              component="code"
+                              sx={{
+                                px: 0.75,
+                                py: 0.25,
+                                bgcolor: '#e5e7eb',
+                                borderRadius: 0.5,
+                                fontSize: '0.8125rem',
+                                fontFamily: '"SF Mono", "Monaco", "Inconsolata", monospace',
+                                color: '#d13438',
+                              }}
+                            >
+                              {children}
+                            </Box>
+                          ),
+                          strong: ({ children }) => (
+                            <Box component="strong" sx={{ fontWeight: 600, color: '#2d333a' }}>
+                              {children}
+                            </Box>
+                          ),
+                        }}
+                      >
+                        {subQuestion.question}
+                      </ReactMarkdown>
+                    </Box>
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: '#2d333a',
+                              lineHeight: 1.7,
+                              fontSize: '0.875rem',
+                              mb: 1.5,
+                              '&:last-child': { mb: 0 },
+                            }}
+                          >
+                            {children}
+                          </Typography>
+                        ),
+                        ul: ({ children }) => (
+                          <Box component="ul" sx={{ pl: 3, my: 1 }}>
+                            {children}
+                          </Box>
+                        ),
+                        ol: ({ children }) => (
+                          <Box component="ol" sx={{ pl: 3, my: 1 }}>
+                            {children}
+                          </Box>
+                        ),
+                        li: ({ children }) => (
+                          <Typography
+                            component="li"
+                            variant="body2"
+                            sx={{
+                              color: '#2d333a',
+                              lineHeight: 1.7,
+                              fontSize: '0.875rem',
+                              mb: 0.5,
+                            }}
+                          >
+                            {children}
+                          </Typography>
+                        ),
+                        code: ({ children, ...props }) => {
+                          const isInline = !props.className;
+                          return isInline ? (
+                            <Box
+                              component="code"
+                              sx={{
+                                px: 0.75,
+                                py: 0.25,
+                                bgcolor: '#e5e7eb',
+                                borderRadius: 0.5,
+                                fontSize: '0.8125rem',
+                                fontFamily: '"SF Mono", "Monaco", "Inconsolata", monospace',
+                                color: '#d13438',
+                              }}
+                            >
+                              {children}
+                            </Box>
+                          ) : (
+                            <Box
+                              component="code"
+                              sx={{
+                                display: 'block',
+                                p: 2,
+                                bgcolor: '#0d1117',
+                                color: '#e6edf3',
+                                borderRadius: 1,
+                                fontSize: '0.8125rem',
+                                lineHeight: 1.6,
+                                fontFamily: '"SF Mono", "Monaco", "Inconsolata", monospace',
+                                overflow: 'auto',
+                              }}
+                            >
+                              {children}
+                            </Box>
+                          );
+                        },
+                        strong: ({ children }) => (
+                          <Box component="strong" sx={{ fontWeight: 600, color: '#2d333a' }}>
+                            {children}
+                          </Box>
+                        ),
                       }}
                     >
                       {subQuestion.correctAnswer}
-                    </Typography>
+                    </ReactMarkdown>
                     {subQuestion.codeExample && (
                       <Box
                         component="pre"
@@ -637,9 +900,29 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
                     <Typography variant="body2" sx={{ color: '#8661c5', fontWeight: 600, mb: 1, fontSize: '0.875rem' }}>
                       Sub-question {idx + 1}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#2d333a', mb: 2, fontSize: '0.875rem', lineHeight: 1.6 }}>
-                      {subQuestion.question}
-                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => (
+                            <Typography variant="body2" sx={{ color: '#2d333a', fontSize: '0.875rem', lineHeight: 1.6, mb: 1, '&:last-child': { mb: 0 } }}>
+                              {children}
+                            </Typography>
+                          ),
+                          code: ({ children }) => (
+                            <Box component="code" sx={{ px: 0.5, py: 0.25, bgcolor: '#e5e7eb', borderRadius: 0.5, fontSize: '0.8125rem', fontFamily: '"SF Mono", "Monaco", "Inconsolata", monospace', color: '#d13438' }}>
+                              {children}
+                            </Box>
+                          ),
+                          strong: ({ children }) => (
+                            <Box component="strong" sx={{ fontWeight: 600 }}>
+                              {children}
+                            </Box>
+                          ),
+                        }}
+                      >
+                        {subQuestion.question}
+                      </ReactMarkdown>
+                    </Box>
 
                     <Typography variant="body2" sx={{ color: '#2d333a', mb: 2, fontWeight: 500, fontSize: '0.875rem' }}>
                       Score: {subQuestion.score !== null && subQuestion.score !== undefined ? `${subQuestion.score}%` : 'Not scored'}
