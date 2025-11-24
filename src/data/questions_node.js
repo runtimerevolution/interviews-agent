@@ -7,7 +7,7 @@ export const questions = [
     "question": "What is the Node.js event loop and how does it work?",
     "correctAnswer": "The event loop is the mechanism that allows Node.js to perform non-blocking I/O operations despite JavaScript being single-threaded. It continuously checks the call stack and callback queue, executing callbacks when the stack is empty. Phases include: timers, pending callbacks, idle/prepare, poll, check, and close callbacks.",
     "codeExample": "console.log('Start');\n\nsetTimeout(() => {\n  console.log('Timeout');\n}, 0);\n\nPromise.resolve().then(() => {\n  console.log('Promise');\n});\n\nconsole.log('End');\n\n// Output:\n// Start\n// End\n// Promise (microtask - higher priority)\n// Timeout (macrotask)",
-    "image": "https://picsum.photos/id/30/800/400"
+    "image": ""
   },
   {
     "id": 2,

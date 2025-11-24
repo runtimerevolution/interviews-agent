@@ -191,6 +191,8 @@ function App() {
       {currentPage === 'interview' && (
         <InterviewPage
           questions={interviewData}
+          technology={selectedTechnology}
+          technologyName={techNames[selectedTechnology]}
           onUpdateQuestion={updateQuestionData}
           onAddQuestion={addQuestion}
           onFinish={finishInterview}

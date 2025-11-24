@@ -20,13 +20,20 @@ import {
   Psychology,
   Refresh,
   Close,
+  PictureAsPdf,
 } from '@mui/icons-material';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import AIInsights from './AIInsights';
 
 const ReportPage = ({ interviewData, technology = 'rails', technologyName = 'Ruby on Rails', onRestart, generalFeedback }) => {
   const [transformedFeedback, setTransformedFeedback] = useState(null);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [feedbackError, setFeedbackError] = useState(null);
+
+  const getLevelBadge = (level) => {
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  };
 
   const answeredQuestions = interviewData.filter(q => q.score !== null);
 
@@ -325,6 +332,239 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
     URL.revokeObjectURL(url);
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - 2 * margin;
+    let yPosition = margin;
+
+    // Helper function to check if we need a new page
+    const checkPageBreak = (requiredHeight) => {
+      if (yPosition + requiredHeight > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+        return true;
+      }
+      return false;
+    };
+
+    // Helper function to add wrapped text
+    const addWrappedText = (text, fontSize, isBold = false) => {
+      doc.setFontSize(fontSize);
+      doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+      const lines = doc.splitTextToSize(text, contentWidth);
+      const lineHeight = fontSize * 0.4;
+
+      checkPageBreak(lines.length * lineHeight);
+
+      lines.forEach((line) => {
+        doc.text(line, margin, yPosition);
+        yPosition += lineHeight;
+      });
+    };
+
+    // Title
+    doc.setFillColor(134, 97, 197); // Purple color
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${technologyName} Interview Report`, pageWidth / 2, 25, { align: 'center' });
+
+    yPosition = 50;
+    doc.setTextColor(0, 0, 0);
+
+    // Date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }), margin, yPosition);
+    yPosition += 15;
+
+    // Candidate Level Section
+    doc.setFillColor(assessment.bgcolor === '#dff6dd' ? 223 : assessment.bgcolor === '#fff4ce' ? 255 : 253,
+                     assessment.bgcolor === '#dff6dd' ? 246 : assessment.bgcolor === '#fff4ce' ? 244 : 231,
+                     assessment.bgcolor === '#dff6dd' ? 221 : assessment.bgcolor === '#fff4ce' ? 206 : 233);
+    doc.roundedRect(margin, yPosition, contentWidth, 30, 3, 3, 'F');
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CANDIDATE LEVEL', margin + 5, yPosition + 8);
+
+    doc.setFontSize(16);
+    doc.text(assessment.level, margin + 5, yPosition + 18);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const descLines = doc.splitTextToSize(assessment.description, contentWidth - 10);
+    descLines.forEach((line, index) => {
+      doc.text(line, margin + 5, yPosition + 25 + (index * 4));
+    });
+
+    yPosition += 35 + (descLines.length * 4);
+
+    // Statistics
+    checkPageBreak(25);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Average Score: ${averageScore.toFixed(1)}%`, margin, yPosition);
+    yPosition += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Questions Answered: ${answeredQuestions.length}`, margin, yPosition);
+    yPosition += 15;
+
+    // Level Breakdown
+    if (assessment.levelBreakdown) {
+      checkPageBreak(35);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Performance by Level:', margin, yPosition);
+      yPosition += 7;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+
+      if (assessment.levelBreakdown.junior.count > 0) {
+        doc.text(`Junior (${assessment.levelBreakdown.junior.count} questions): ${assessment.levelBreakdown.junior.score.toFixed(0)}%`, margin + 5, yPosition);
+        yPosition += 6;
+      }
+      if (assessment.levelBreakdown.mid.count > 0) {
+        doc.text(`Mid (${assessment.levelBreakdown.mid.count} questions): ${assessment.levelBreakdown.mid.score.toFixed(0)}%`, margin + 5, yPosition);
+        yPosition += 6;
+      }
+      if (assessment.levelBreakdown.senior.count > 0) {
+        doc.text(`Senior (${assessment.levelBreakdown.senior.count} questions): ${assessment.levelBreakdown.senior.score.toFixed(0)}%`, margin + 5, yPosition);
+        yPosition += 6;
+      }
+      yPosition += 10;
+    }
+
+    // General Feedback
+    if (transformedFeedback && transformedFeedback.length > 0) {
+      checkPageBreak(20);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('General Interview Feedback:', margin, yPosition);
+      yPosition += 10;
+
+      transformedFeedback.forEach((qa, index) => {
+        checkPageBreak(15);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(134, 97, 197);
+        addWrappedText(`Q${index + 1}: ${qa.question}`, 10, true);
+        yPosition += 2;
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        addWrappedText(qa.answer, 9, false);
+        yPosition += 8;
+      });
+    }
+
+    // Detailed Responses
+    doc.addPage();
+    yPosition = margin;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Question Responses', margin, yPosition);
+    yPosition += 12;
+
+    answeredQuestions.forEach((question, index) => {
+      checkPageBreak(30);
+
+      // Question header
+      doc.setFillColor(243, 242, 241);
+      doc.roundedRect(margin, yPosition, contentWidth, 8, 2, 2, 'F');
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${index + 1}. [${question.level.toUpperCase()}] [${question.score}%]`, margin + 3, yPosition + 5);
+      yPosition += 12;
+
+      // Question text
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      addWrappedText(question.question, 10, false);
+      yPosition += 5;
+
+      // Category
+      doc.setFontSize(8);
+      doc.setTextColor(134, 97, 197);
+      doc.text(`Category: ${question.category}`, margin + 5, yPosition);
+      yPosition += 8;
+      doc.setTextColor(0, 0, 0);
+
+      // Feedback
+      if (question.comment) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Feedback:', margin + 5, yPosition);
+        yPosition += 5;
+
+        doc.setFont('helvetica', 'normal');
+        addWrappedText(question.comment, 9, false);
+        yPosition += 5;
+      }
+
+      // Candidate Code
+      if (question.candidateCode) {
+        checkPageBreak(20);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Candidate's Code:", margin + 5, yPosition);
+        yPosition += 5;
+
+        doc.setFillColor(245, 245, 245);
+        const codeLines = question.candidateCode.split('\n');
+        const codeHeight = Math.min(codeLines.length * 4 + 6, 40); // Limit code box height
+
+        checkPageBreak(codeHeight);
+        doc.roundedRect(margin + 5, yPosition, contentWidth - 10, codeHeight, 2, 2, 'F');
+
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(7);
+        const displayedLines = codeLines.slice(0, 8); // Limit to 8 lines
+        displayedLines.forEach((line, idx) => {
+          doc.text(line.substring(0, 80), margin + 8, yPosition + 4 + (idx * 4)); // Limit line length
+        });
+        if (codeLines.length > 8) {
+          doc.text('... (truncated)', margin + 8, yPosition + 4 + (8 * 4));
+        }
+        yPosition += codeHeight + 5;
+      }
+
+      // Sub-questions
+      if (question.hasSubQuestions && question.subQuestions) {
+        checkPageBreak(20);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Sub-questions:', margin + 5, yPosition);
+        yPosition += 5;
+
+        question.subQuestions.forEach((sub, subIdx) => {
+          checkPageBreak(12);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${subIdx + 1}. [${sub.score || 0}%] ${sub.question}`, margin + 10, yPosition);
+          yPosition += 5;
+        });
+      }
+
+      yPosition += 10;
+    });
+
+    // Save PDF
+    doc.save(`${technology}-interview-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#faf9f8' }}>
       {/* Sidebar */}
@@ -439,7 +679,25 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
               },
             }}
           >
-            Export Report
+            Export Report (TXT)
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={handleExportPDF}
+            startIcon={<PictureAsPdf />}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderColor: '#e1dfdd',
+              color: '#605e5c',
+              '&:hover': {
+                borderColor: '#a19f9d',
+                bgcolor: '#f3f2f1',
+              },
+            }}
+          >
+            Export Report (PDF)
           </Button>
           <Button
             fullWidth
@@ -693,21 +951,28 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <CheckCircle sx={{ fontSize: 18, color: '#107c10' }} />
                     <Chip
+                      label={getLevelBadge(question.level)}
+                      size="small"
+                      sx={{
+                        bgcolor: question.level === 'junior' ? 'rgba(209, 250, 229, 0.5)' : question.level === 'mid' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(204, 51, 0, 0.5)',
+                        color: question.level === 'junior' ? '#107c10' : question.level === 'mid' ? '#000000' : '#ffffff',
+                        fontWeight: 600,
+                        fontSize: '0.5625rem',
+                        height: 16,
+                        minWidth: 'auto',
+                        textTransform: 'uppercase',
+                        '& .MuiChip-label': {
+                          px: 0.625,
+                          py: 0.125,
+                        },
+                      }}
+                    />
+                    <Chip
                       label={question.category}
                       size="small"
                       sx={{
                         bgcolor: '#f3f2f1',
                         color: '#8661c5',
-                        fontWeight: 600,
-                        fontSize: '0.7rem',
-                      }}
-                    />
-                    <Chip
-                      label={question.level.charAt(0).toUpperCase() + question.level.slice(1)}
-                      size="small"
-                      sx={{
-                        bgcolor: question.level === 'junior' ? '#dff6dd' : question.level === 'mid' ? '#e1f5fe' : '#f3f0f7',
-                        color: question.level === 'junior' ? '#107c10' : question.level === 'mid' ? '#0078d4' : '#8661c5',
                         fontWeight: 600,
                         fontSize: '0.7rem',
                       }}

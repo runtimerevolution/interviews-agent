@@ -7,7 +7,7 @@ export const questions = [
     "question": "What are React components and JSX? Explain the difference between functional and class components.",
     "correctAnswer": "Components are reusable UI building blocks that return JSX (JavaScript XML syntax). Functional components are simple functions that return JSX. Class components use ES6 classes with render() method. Modern React favors functional components with hooks.",
     "codeExample": "// Functional Component\nfunction Welcome({ name }) {\n  return <h1>Hello, {name}!</h1>;\n}\n\n// Arrow function style\nconst Welcome = ({ name }) => {\n  return <h1>Hello, {name}!</h1>;\n};\n\n// Class Component\nclass Welcome extends React.Component {\n  render() {\n    return <h1>Hello, {this.props.name}!</h1>;\n  }\n}\n\n// JSX transpiles to:\nReact.createElement('h1', null, 'Hello, ', name, '!');\n\n// Usage\n<Welcome name=\"John\" />",
-    "image": "https://picsum.photos/id/40/800/400"
+    "image": ""
   },
   {
     "id": 2,

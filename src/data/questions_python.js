@@ -7,7 +7,7 @@ export const questions = [
     "question": "What is the difference between lists and tuples in Python?",
     "correctAnswer": "Lists are mutable (can be changed after creation) and use square brackets []. Tuples are immutable (cannot be changed) and use parentheses (). Lists have more methods and slightly slower performance. Tuples are used for fixed collections and can be dictionary keys.",
     "codeExample": "# List - mutable\nmy_list = [1, 2, 3]\nmy_list[0] = 10  # ✓ Works\nmy_list.append(4)  # ✓ Can modify\nprint(my_list)  # [10, 2, 3, 4]\n\n# Tuple - immutable\nmy_tuple = (1, 2, 3)\n# my_tuple[0] = 10  # ✗ TypeError: 'tuple' object does not support item assignment\n\n# Tuples can be dictionary keys\ncoordinates = {(0, 0): \"origin\", (1, 1): \"diagonal\"}\n\n# Memory comparison\nimport sys\nprint(sys.getsizeof([1, 2, 3]))  # 88 bytes\nprint(sys.getsizeof((1, 2, 3)))  # 72 bytes\n\n# Tuple unpacking\nx, y, z = (1, 2, 3)\nprint(x, y, z)  # 1 2 3",
-    "image": "https://picsum.photos/id/50/800/400"
+    "image": ""
   },
   {
     "id": 2,

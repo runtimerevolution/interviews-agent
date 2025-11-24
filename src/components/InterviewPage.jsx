@@ -25,7 +25,7 @@ import ReactMarkdown from 'react-markdown';
 import AddQuestionDialog from './AddQuestionDialog';
 import GeneralFeedbackDialog from './GeneralFeedbackDialog';
 
-const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, generalFeedback, onGeneralFeedbackChange }) => {
+const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion, onFinish, onAddQuestion, generalFeedback, onGeneralFeedbackChange }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
@@ -94,6 +94,8 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
         title: currentQuestion.title,
         question: currentQuestion.question,
         image: currentQuestion.image, // Include image if present
+        technology: technology,
+        technologyName: technologyName,
       },
       code: '',
       timestamp: new Date().toISOString(),
@@ -121,11 +123,15 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
 
   const getLevelColor = (level) => {
     switch(level) {
-      case 'junior': return { bg: '#d1fae5', text: '#065f46' };
-      case 'mid': return { bg: '#dbeafe', text: '#1e40af' };
-      case 'senior': return { bg: '#e0e7ff', text: '#5b21b6' };
+      case 'junior': return { bg: 'rgba(209, 250, 229, 0.5)', text: '#065f46' };
+      case 'mid': return { bg: 'rgba(245, 158, 11, 0.5)', text: '#000000' };
+      case 'senior': return { bg: 'rgba(204, 51, 0, 0.5)', text: '#ffffff' };
       default: return { bg: '#f3f4f6', text: '#6b7280' };
     }
+  };
+
+  const getLevelBadge = (level) => {
+    return level.charAt(0).toUpperCase() + level.slice(1);
   };
 
   // Check if general feedback has content
@@ -200,34 +206,38 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
                   )}
                 </Box>
                 <Box sx={{ flex: 1 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: '0.8125rem',
-                      fontWeight: 500,
-                      color: '#2d333a',
-                      mb: 0.5,
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {q.title}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', mb: 0.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '0.8125rem',
+                        fontWeight: 500,
+                        color: '#2d333a',
+                        lineHeight: 1.3,
+                        flex: 1,
+                      }}
+                    >
+                      {q.title}
+                    </Typography>
                     <Chip
-                      label={q.level.charAt(0).toUpperCase() + q.level.slice(1)}
+                      label={getLevelBadge(q.level)}
                       size="small"
                       sx={{
-                        height: 18,
-                        fontSize: '0.65rem',
+                        height: 16,
+                        fontSize: '0.5625rem',
                         fontWeight: 500,
                         bgcolor: getLevelColor(q.level).bg,
                         color: getLevelColor(q.level).text,
+                        minWidth: 'auto',
                         '& .MuiChip-label': {
-                          px: 0.75,
+                          px: 0.625,
+                          py: 0.125,
                         },
                       }}
                     />
-                    {q.hasSubQuestions && (
+                  </Box>
+                  {q.hasSubQuestions && (
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                       <Chip
                         icon={<AccountTree sx={{ fontSize: '0.75rem !important', ml: 0.5 }} />}
                         label={q.subQuestions?.length || 0}
@@ -247,8 +257,8 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
                           },
                         }}
                       />
-                    )}
-                  </Box>
+                    </Box>
+                  )}
                 </Box>
               </ListItemButton>
             </ListItem>
@@ -350,22 +360,28 @@ const InterviewPage = ({ questions, onUpdateQuestion, onFinish, onAddQuestion, g
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
               <Chip
+                label={getLevelBadge(currentQuestion.level)}
+                size="small"
+                sx={{
+                  bgcolor: getLevelColor(currentQuestion.level).bg,
+                  color: getLevelColor(currentQuestion.level).text,
+                  fontWeight: 500,
+                  fontSize: '0.625rem',
+                  height: 20,
+                  minWidth: 'auto',
+                  textTransform: 'uppercase',
+                  '& .MuiChip-label': {
+                    px: 0.75,
+                    py: 0.25,
+                  },
+                }}
+              />
+              <Chip
                 label={currentQuestion.category}
                 size="small"
                 sx={{
                   bgcolor: '#f3f4f6',
                   color: '#2d333a',
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
-                  height: 24,
-                }}
-              />
-              <Chip
-                label={currentQuestion.level.charAt(0).toUpperCase() + currentQuestion.level.slice(1)}
-                size="small"
-                sx={{
-                  bgcolor: getLevelColor(currentQuestion.level).bg,
-                  color: getLevelColor(currentQuestion.level).text,
                   fontWeight: 500,
                   fontSize: '0.75rem',
                   height: 24,

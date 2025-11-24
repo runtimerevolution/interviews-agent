@@ -1,0 +1,8 @@
+# Don't ignore any files in the build
+# Vercel should include everything by default
+
+# But make sure these are NOT ignored
+!public/
+!public/images/
+!public/images/**/*
+

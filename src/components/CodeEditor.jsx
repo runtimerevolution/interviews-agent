@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Container,
   Box,
@@ -8,104 +8,232 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
-import { Save, CheckCircle } from '@mui/icons-material';
+import { Save, CheckCircle, CloudSync } from '@mui/icons-material';
+
+const API_URL = import.meta.env.PROD
+  ? '/api/code-session'
+  : 'http://localhost:5173/api/code-session';
+
+// Helper function to get placeholder based on technology
+const getPlaceholderByTech = (technology) => {
+  const placeholders = {
+    rails: `# Type your Ruby/Rails code here...
+
+def example
+  puts 'Hello, Rails!'
+end`,
+    node: `// Type your Node.js code here...
+
+function example() {
+  console.log('Hello, Node.js!');
+}`,
+    react: `// Type your React code here...
+
+function Example() {
+  return <div>Hello, React!</div>;
+}`,
+    python: `# Type your Python code here...
+
+def example():
+    print('Hello, Python!')`,
+  };
+
+  return placeholders[technology] || `// Type your code here...`;
+};
 
 const CodeEditor = ({ sessionId, onSave }) => {
   const [saved, setSaved] = useState(false);
-  const [autoSaving, setAutoSaving] = useState(false);
-  const [lastAutoSave, setLastAutoSave] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [code, setCode] = useState('');
+  const [questionInfo, setQuestionInfo] = useState(null);
+  const [lastRemoteModified, setLastRemoteModified] = useState(null);
+  const isLocalChange = useRef(false);
+  const loadingInitialData = useRef(true);
+  const textareaRef = useRef(null);
+  const lineNumbersRef = useRef(null);
 
-  // Initialize state with localStorage data based on sessionId
-  const [code, setCode] = useState(() => {
-    const sessionData = localStorage.getItem(`code_session_${sessionId}`);
-    if (sessionData) {
-      try {
-        const data = JSON.parse(sessionData);
-        return data.code || '';
-      } catch (e) {
-        console.error('Error parsing session data:', e);
+  // Helper function to save to backend
+  const saveToBackend = async (codeToSave, questionInfoToSave) => {
+    try {
+      console.log('[CodeEditor] Saving to backend:', { codeLength: codeToSave?.length, sessionId });
+      const response = await fetch(`${API_URL}?sessionId=${sessionId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: codeToSave,
+          questionInfo: questionInfoToSave,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[CodeEditor] Saved successfully:', data);
+        setLastRemoteModified(Date.now());
+        // Also save to localStorage as backup
+        localStorage.setItem(`code_session_${sessionId}`, JSON.stringify({
+          code: codeToSave,
+          timestamp: data.timestamp,
+          questionInfo: questionInfoToSave,
+        }));
+        return true;
       }
+      console.error('[CodeEditor] Save failed:', response.status);
+      return false;
+    } catch (error) {
+      console.error('Error saving to backend:', error);
+      // Fallback to localStorage
+      localStorage.setItem(`code_session_${sessionId}`, JSON.stringify({
+        code: codeToSave,
+        timestamp: new Date().toISOString(),
+        questionInfo: questionInfoToSave,
+      }));
+      return false;
     }
-    return '';
-  });
+  };
 
-  const [questionInfo, setQuestionInfo] = useState(() => {
-    const sessionData = localStorage.getItem(`code_session_${sessionId}`);
-    if (sessionData) {
-      try {
-        const data = JSON.parse(sessionData);
-        return data.questionInfo || null;
-      } catch (e) {
-        console.error('Error parsing session data:', e);
-      }
-    }
-    return null;
-  });
-
-  // Synchronize React state with external system (localStorage) when sessionId changes
-  // This is a valid use case: loading initial data from external storage
+  // Load initial data from backend
   useEffect(() => {
-    const sessionData = localStorage.getItem(`code_session_${sessionId}`);
-    if (sessionData) {
+    const loadSessionData = async () => {
       try {
-        const data = JSON.parse(sessionData);
-        // eslint-disable-next-line
-        setCode(data.code || '');
-        setQuestionInfo(data.questionInfo || null);
-      } catch (e) {
-        console.error('Error parsing session data:', e);
-        setCode('');
-        setQuestionInfo(null);
+        console.log('[CodeEditor] Loading session data for:', sessionId);
+        const response = await fetch(`${API_URL}?sessionId=${sessionId}`);
+        console.log('[CodeEditor] Response status:', response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[CodeEditor] Loaded data:', data);
+
+          if (data.exists) {
+            setCode(data.code || '');
+            setQuestionInfo(data.questionInfo || null);
+            setLastRemoteModified(data.lastModified);
+          } else {
+            // Try localStorage as fallback for backward compatibility
+            const localData = localStorage.getItem(`code_session_${sessionId}`);
+            if (localData) {
+              const parsed = JSON.parse(localData);
+              setCode(parsed.code || '');
+              setQuestionInfo(parsed.questionInfo || null);
+              // Upload to backend
+              await saveToBackend(parsed.code, parsed.questionInfo);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading session data:', error);
+        // Fallback to localStorage
+        const localData = localStorage.getItem(`code_session_${sessionId}`);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          setCode(parsed.code || '');
+          setQuestionInfo(parsed.questionInfo || null);
+        }
+      } finally {
+        console.log('[CodeEditor] Initial load complete');
+        loadingInitialData.current = false;
       }
-    } else {
-      setCode('');
-      setQuestionInfo(null);
-    }
+    };
+
+    loadSessionData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  // Auto-save every 10 seconds
+  // Poll for updates from backend every 3 seconds
   useEffect(() => {
-    const autoSaveInterval = setInterval(() => {
-      if (code.trim()) {
-        setAutoSaving(true);
-        const sessionData = {
-          code,
-          timestamp: new Date().toISOString(),
-          questionInfo,
-        };
-        localStorage.setItem(`code_session_${sessionId}`, JSON.stringify(sessionData));
+    // Wait a bit after initial load before starting polling
+    const startDelay = setTimeout(() => {
+      console.log('[CodeEditor] Starting polling...');
 
-        // Also save to parent if callback provided
-        if (onSave) {
-          onSave(sessionId, code);
+      const pollInterval = setInterval(async () => {
+        try {
+          setSyncing(true);
+          const response = await fetch(`${API_URL}?sessionId=${sessionId}`);
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('[CodeEditor] Polled data:', data, 'Local change:', isLocalChange.current);
+
+            // Only update if there's a newer version from remote and we haven't made local changes recently
+            if (data.exists &&
+                data.lastModified &&
+                (!lastRemoteModified || data.lastModified > lastRemoteModified) &&
+                !isLocalChange.current) {
+              console.log('[CodeEditor] Updating from remote');
+              setCode(data.code || '');
+              setQuestionInfo(data.questionInfo || null);
+              setLastRemoteModified(data.lastModified);
+            }
+          }
+        } catch (error) {
+          console.error('Error polling session data:', error);
+        } finally {
+          setSyncing(false);
         }
+      }, 3000); // Poll every 3 seconds
 
-        setLastAutoSave(new Date().toLocaleTimeString());
+      return () => clearInterval(pollInterval);
+    }, 2000); // Start polling after 2 seconds
 
-        // Show auto-save indicator briefly
-        setTimeout(() => setAutoSaving(false), 2000);
-      }
-    }, 10000); // 10 seconds
+    return () => clearTimeout(startDelay);
+  }, [sessionId, lastRemoteModified]);
 
-    // Cleanup interval on unmount
-    return () => clearInterval(autoSaveInterval);
-  }, [code, sessionId, questionInfo, onSave]);
+  // Auto-save disabled per user request
 
-  const handleSave = () => {
-    const sessionData = {
-      code,
-      timestamp: new Date().toISOString(),
-      questionInfo,
-    };
-    localStorage.setItem(`code_session_${sessionId}`, JSON.stringify(sessionData));
+  const handleSave = async () => {
+    isLocalChange.current = true;
+    await saveToBackend(code, questionInfo);
 
-    // Also save to parent if callback provided
     if (onSave) {
       onSave(sessionId, code);
     }
 
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setTimeout(() => {
+      setSaved(false);
+      isLocalChange.current = false;
+    }, 3000);
+  };
+
+  const handleCodeChange = (e) => {
+    isLocalChange.current = true;
+    setCode(e.target.value);
+    // Reset local change flag after a delay
+    setTimeout(() => {
+      isLocalChange.current = false;
+    }, 5000);
+  };
+
+  // Handle Tab key to insert tab character instead of focusing next element
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+
+      // Insert tab (2 spaces)
+      const newValue = value.substring(0, start) + '  ' + value.substring(end);
+      setCode(newValue);
+
+      // Move cursor after the inserted tab
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 2;
+      }, 0);
+    }
+  };
+
+  // Calculate line numbers based on code content
+  const lineNumbers = code.split('\n').map((_, index) => index + 1).join('\n');
+
+  // Sync scroll between textarea and line numbers
+  const handleScroll = (e) => {
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.target.scrollTop;
+    }
   };
 
   return (
@@ -174,9 +302,19 @@ const CodeEditor = ({ sessionId, onSave }) => {
           )}
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="body1" sx={{ color: '#2d333a', fontWeight: 500 }}>
-              Write your code here
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body1" sx={{ color: '#2d333a', fontWeight: 500 }}>
+                Write your code here
+              </Typography>
+              {syncing && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <CloudSync sx={{ fontSize: '1rem', color: '#6e6e80', animation: 'spin 2s linear infinite' }} />
+                  <Typography variant="caption" sx={{ color: '#6e6e80', fontSize: '0.75rem' }}>
+                    Syncing...
+                  </Typography>
+                </Box>
+              )}
+            </Box>
             <Button
               variant="contained"
               startIcon={saved ? <CheckCircle /> : <Save />}
@@ -192,50 +330,85 @@ const CodeEditor = ({ sessionId, onSave }) => {
             </Button>
           </Box>
 
-          <TextField
-            fullWidth
-            multiline
-            rows={20}
-            placeholder="# Type your Ruby/Rails code here...
-
-def example
-  puts 'Hello, Rails!'
-end"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            variant="outlined"
+          <Box
             sx={{
-              '& .MuiOutlinedInput-root': {
-                fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
-                fontSize: '0.9375rem',
-                bgcolor: '#f9fafb',
-                '& fieldset': {
-                  borderColor: '#d1d5db',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#9ca3af',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#10a37f',
-                  borderWidth: '2px',
-                },
+              display: 'flex',
+              border: '1px solid #d1d5db',
+              borderRadius: 1,
+              overflow: 'hidden',
+              bgcolor: '#f9fafb',
+              '&:hover': {
+                borderColor: '#9ca3af',
+              },
+              '&:focus-within': {
+                borderColor: '#10a37f',
+                borderWidth: '2px',
               },
             }}
-          />
+          >
+            {/* Line Numbers */}
+            <Box
+              component="pre"
+              ref={lineNumbersRef}
+              sx={{
+                m: 0,
+                p: 2,
+                pr: 1,
+                bgcolor: '#e5e7eb',
+                color: '#6e6e80',
+                fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
+                fontSize: '0.9375rem',
+                lineHeight: 1.5,
+                textAlign: 'right',
+                userSelect: 'none',
+                minWidth: '50px',
+                borderRight: '1px solid #d1d5db',
+                overflow: 'hidden',
+                height: '500px',
+              }}
+            >
+              {lineNumbers}
+            </Box>
+
+            {/* Code Input */}
+            <Box
+              component="textarea"
+              ref={textareaRef}
+              placeholder={getPlaceholderByTech(questionInfo?.technology)}
+              value={code}
+              onChange={handleCodeChange}
+              onKeyDown={handleKeyDown}
+              onScroll={handleScroll}
+              sx={{
+                flex: 1,
+                p: 2,
+                m: 0,
+                border: 'none',
+                outline: 'none',
+                resize: 'none',
+                fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
+                fontSize: '0.9375rem',
+                lineHeight: 1.5,
+                bgcolor: 'transparent',
+                color: '#2d333a',
+                height: '500px',
+                '&::placeholder': {
+                  color: '#9ca3af',
+                },
+              }}
+            />
+          </Box>
         </Box>
 
         <Alert
-          severity={autoSaving ? "success" : "info"}
+          severity="info"
           sx={{ borderRadius: 2 }}
         >
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {autoSaving ? '✓ Auto-saving...' : '💡 Auto-save enabled (every 10 seconds)'}
+            💡 Real-time collaboration enabled
           </Typography>
           <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-            {lastAutoSave
-              ? `Last auto-saved at ${lastAutoSave}. Click "Save Code" to confirm your submission.`
-              : 'Your code will be automatically saved every 10 seconds. Click "Save Code" to confirm your submission.'
-            }
+            Click "Save Code" to save your changes. Changes are synced every 3 seconds across all viewers. Use Tab key to indent.
           </Typography>
         </Alert>
       </Container>
