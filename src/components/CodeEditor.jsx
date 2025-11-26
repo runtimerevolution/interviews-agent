@@ -43,8 +43,7 @@ def example():
 
 const CodeEditor = ({ sessionId, onSave }) => {
   const [saved, setSaved] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [autoSaving, setAutoSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [code, setCode] = useState('');
   const [questionInfo, setQuestionInfo] = useState(null);
   const [lastRemoteModified, setLastRemoteModified] = useState(null);
@@ -167,90 +166,54 @@ const CodeEditor = ({ sessionId, onSave }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  // Poll for updates from backend every 3 seconds
-  useEffect(() => {
-    // Wait a bit after initial load before starting polling
-    const startDelay = setTimeout(() => {
-      console.log('[CodeEditor] Starting polling...');
+  // Polling disabled - use Refresh button instead
 
-      const pollInterval = setInterval(async () => {
-        try {
-          setSyncing(true);
-          const response = await fetch(`${API_URL}?sessionId=${sessionId}`);
+  // Refresh: Load latest code from server
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      console.log('[CodeEditor] Refreshing code from server...');
+      const response = await fetch(`${API_URL}?sessionId=${sessionId}`);
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log('[CodeEditor] Polled data:', data, 'Local change:', isLocalChange.current);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[CodeEditor] Refreshed data:', data);
 
-            // Only update if there's a newer version from remote and we haven't made local changes recently
-            if (data.exists &&
-                data.lastModified &&
-                (!lastRemoteModified || data.lastModified > lastRemoteModified) &&
-                !isLocalChange.current) {
-              console.log('[CodeEditor] Updating from remote');
-              setCode(data.code || '');
-              setQuestionInfo(data.questionInfo || null);
-              setLastRemoteModified(data.lastModified);
-            }
-          }
-        } catch (error) {
-          console.error('Error polling session data:', error);
-        } finally {
-          setSyncing(false);
+        if (data.exists) {
+          setCode(data.code || '');
+          setQuestionInfo(data.questionInfo || null);
+          setLastRemoteModified(data.lastModified);
+          console.log('[CodeEditor] Code refreshed successfully');
         }
-      }, 3000); // Poll every 3 seconds
-
-      return () => clearInterval(pollInterval);
-    }, 2000); // Start polling after 2 seconds
-
-    return () => clearTimeout(startDelay);
-  }, [sessionId, lastRemoteModified]);
-
-  // Auto-save: save code every 2 seconds when there are changes
-  useEffect(() => {
-    if (loadingInitialData.current) {
-      return; // Don't auto-save during initial load
-    }
-
-    const autoSaveTimer = setTimeout(async () => {
-      if (isLocalChange.current && code !== undefined) {
-        console.log('[CodeEditor] Auto-saving code...');
-        setAutoSaving(true);
-        const success = await saveToBackend(code, questionInfo);
-        setAutoSaving(false);
-        if (success) {
-          setSaved(true);
-          setTimeout(() => setSaved(false), 2000);
-        }
-        isLocalChange.current = false;
       }
-    }, 2000); // Auto-save after 2 seconds of inactivity
-
-    return () => clearTimeout(autoSaveTimer);
-  }, [code, questionInfo]);
+    } catch (error) {
+      console.error('[CodeEditor] Error refreshing code:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleSave = async () => {
+    console.log('[CodeEditor] Manually saving code...');
     isLocalChange.current = true;
-    await saveToBackend(code, questionInfo);
+    const success = await saveToBackend(code, questionInfo);
 
-    if (onSave) {
+    if (success && onSave) {
       onSave(sessionId, code);
     }
 
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      isLocalChange.current = false;
-    }, 3000);
+    if (success) {
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        isLocalChange.current = false;
+      }, 3000);
+    }
   };
 
   const handleCodeChange = (e) => {
-    isLocalChange.current = true;
     setCode(e.target.value);
-    // Reset local change flag after a delay
-    setTimeout(() => {
-      isLocalChange.current = false;
-    }, 5000);
+    setSaved(false); // Clear saved status when editing
   };
 
   // Handle Tab key to insert tab character instead of focusing next element
@@ -354,15 +317,7 @@ const CodeEditor = ({ sessionId, onSave }) => {
               <Typography variant="body1" sx={{ color: '#2d333a', fontWeight: 500 }}>
                 Write your code here
               </Typography>
-              {autoSaving && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <CloudSync sx={{ fontSize: '1rem', color: '#10a37f', animation: 'spin 2s linear infinite' }} />
-                  <Typography variant="caption" sx={{ color: '#10a37f', fontSize: '0.75rem' }}>
-                    Auto-saving...
-                  </Typography>
-                </Box>
-              )}
-              {!autoSaving && saved && (
+              {saved && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <CheckCircle sx={{ fontSize: '1rem', color: '#10a37f' }} />
                   <Typography variant="caption" sx={{ color: '#10a37f', fontSize: '0.75rem' }}>
@@ -370,29 +325,44 @@ const CodeEditor = ({ sessionId, onSave }) => {
                   </Typography>
                 </Box>
               )}
-              {syncing && !autoSaving && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <CloudSync sx={{ fontSize: '1rem', color: '#6e6e80', animation: 'spin 2s linear infinite' }} />
-                  <Typography variant="caption" sx={{ color: '#6e6e80', fontSize: '0.75rem' }}>
-                    Syncing...
-                  </Typography>
-                </Box>
-              )}
             </Box>
-            <Button
-              variant="contained"
-              startIcon={saved ? <CheckCircle /> : <Save />}
-              onClick={handleSave}
-              disabled={autoSaving}
-              sx={{
-                bgcolor: saved ? '#10a37f' : '#10a37f',
-                '&:hover': {
-                  bgcolor: '#0d8c6e',
-                },
-              }}
-            >
-              {saved ? 'Saved!' : 'Save Now'}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={refreshing ? <CloudSync sx={{ animation: 'spin 2s linear infinite' }} /> : <CloudSync />}
+                onClick={handleRefresh}
+                disabled={refreshing}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  borderColor: '#d1d5db',
+                  color: '#6e6e80',
+                  '&:hover': {
+                    borderColor: '#10a37f',
+                    bgcolor: '#f0fdf4',
+                  },
+                  '&:disabled': {
+                    borderColor: '#e5e7eb',
+                    color: '#9ca3af',
+                  },
+                }}
+              >
+                {refreshing ? 'Loading...' : 'Refresh Code'}
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={saved ? <CheckCircle /> : <Save />}
+                onClick={handleSave}
+                sx={{
+                  bgcolor: saved ? '#10a37f' : '#10a37f',
+                  '&:hover': {
+                    bgcolor: '#0d8c6e',
+                  },
+                }}
+              >
+                {saved ? 'Saved!' : 'Save Code'}
+              </Button>
+            </Box>
           </Box>
 
           <Box
@@ -470,10 +440,10 @@ const CodeEditor = ({ sessionId, onSave }) => {
           sx={{ borderRadius: 2 }}
         >
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            💡 Auto-save & Real-time collaboration enabled
+            💡 Real-time collaboration enabled
           </Typography>
           <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-            Your code is automatically saved 2 seconds after you stop typing. Changes sync across all viewers every 3 seconds. Use Tab key to indent.
+            Click <strong>"Save Code"</strong> to save your changes to the server. Click <strong>"Refresh Code"</strong> to load the latest version from other viewers. Use Tab key to indent.
           </Typography>
         </Alert>
       </Container>
