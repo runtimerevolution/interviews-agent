@@ -44,6 +44,7 @@ def example():
 const CodeEditor = ({ sessionId, onSave }) => {
   const [saved, setSaved] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
   const [code, setCode] = useState('');
   const [questionInfo, setQuestionInfo] = useState(null);
   const [lastRemoteModified, setLastRemoteModified] = useState(null);
@@ -55,8 +56,17 @@ const CodeEditor = ({ sessionId, onSave }) => {
   // Helper function to save to backend
   const saveToBackend = async (codeToSave, questionInfoToSave) => {
     try {
-      console.log('[CodeEditor] Saving to backend:', { codeLength: codeToSave?.length, sessionId });
-      const response = await fetch(`${API_URL}?sessionId=${sessionId}`, {
+      console.log('[CodeEditor] Saving to backend:', {
+        codeLength: codeToSave?.length,
+        sessionId,
+        apiUrl: API_URL,
+        codePreview: codeToSave?.substring(0, 50)
+      });
+
+      const fullUrl = `${API_URL}?sessionId=${sessionId}`;
+      console.log('[CodeEditor] POST to:', fullUrl);
+
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,9 +77,11 @@ const CodeEditor = ({ sessionId, onSave }) => {
         }),
       });
 
+      console.log('[CodeEditor] Save response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log('[CodeEditor] Saved successfully:', data);
+        console.log('[CodeEditor] Saved successfully to backend:', data);
         setLastRemoteModified(Date.now());
         // Also save to localStorage as backup
         localStorage.setItem(`code_session_${sessionId}`, JSON.stringify({
@@ -79,10 +91,10 @@ const CodeEditor = ({ sessionId, onSave }) => {
         }));
         return true;
       }
-      console.error('[CodeEditor] Save failed:', response.status);
+      console.error('[CodeEditor] Save failed with status:', response.status);
       return false;
     } catch (error) {
-      console.error('Error saving to backend:', error);
+      console.error('[CodeEditor] Error saving to backend:', error);
       // Fallback to localStorage
       localStorage.setItem(`code_session_${sessionId}`, JSON.stringify({
         code: codeToSave,
@@ -98,31 +110,46 @@ const CodeEditor = ({ sessionId, onSave }) => {
     const loadSessionData = async () => {
       try {
         console.log('[CodeEditor] Loading session data for:', sessionId);
-        const response = await fetch(`${API_URL}?sessionId=${sessionId}`);
+        console.log('[CodeEditor] API URL:', API_URL);
+        const fullUrl = `${API_URL}?sessionId=${sessionId}`;
+        console.log('[CodeEditor] Full URL:', fullUrl);
+
+        const response = await fetch(fullUrl);
         console.log('[CodeEditor] Response status:', response.status);
 
         if (response.ok) {
           const data = await response.json();
           console.log('[CodeEditor] Loaded data:', data);
+          console.log('[CodeEditor] Code length:', data.code?.length);
+          console.log('[CodeEditor] Question info:', data.questionInfo);
 
           if (data.exists) {
+            console.log('[CodeEditor] Session exists in backend. Code length:', data.code?.length || 0);
             setCode(data.code || '');
             setQuestionInfo(data.questionInfo || null);
             setLastRemoteModified(data.lastModified);
           } else {
+            console.log('[CodeEditor] No data in backend, checking localStorage');
             // Try localStorage as fallback for backward compatibility
             const localData = localStorage.getItem(`code_session_${sessionId}`);
+            console.log('[CodeEditor] LocalStorage data:', localData ? 'found' : 'not found');
             if (localData) {
               const parsed = JSON.parse(localData);
+              console.log('[CodeEditor] Parsed localStorage:', parsed);
               setCode(parsed.code || '');
               setQuestionInfo(parsed.questionInfo || null);
               // Upload to backend
+              console.log('[CodeEditor] Uploading localStorage data to backend');
               await saveToBackend(parsed.code, parsed.questionInfo);
+            } else {
+              console.log('[CodeEditor] No localStorage data either');
             }
           }
+        } else {
+          console.error('[CodeEditor] Response not OK:', response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Error loading session data:', error);
+        console.error('[CodeEditor] Error loading session data:', error);
         // Fallback to localStorage
         const localData = localStorage.getItem(`code_session_${sessionId}`);
         if (localData) {
@@ -131,7 +158,7 @@ const CodeEditor = ({ sessionId, onSave }) => {
           setQuestionInfo(parsed.questionInfo || null);
         }
       } finally {
-        console.log('[CodeEditor] Initial load complete');
+        console.log('[CodeEditor] Initial load complete. Code length:', code.length);
         loadingInitialData.current = false;
       }
     };
@@ -179,7 +206,28 @@ const CodeEditor = ({ sessionId, onSave }) => {
     return () => clearTimeout(startDelay);
   }, [sessionId, lastRemoteModified]);
 
-  // Auto-save disabled per user request
+  // Auto-save: save code every 2 seconds when there are changes
+  useEffect(() => {
+    if (loadingInitialData.current) {
+      return; // Don't auto-save during initial load
+    }
+
+    const autoSaveTimer = setTimeout(async () => {
+      if (isLocalChange.current && code !== undefined) {
+        console.log('[CodeEditor] Auto-saving code...');
+        setAutoSaving(true);
+        const success = await saveToBackend(code, questionInfo);
+        setAutoSaving(false);
+        if (success) {
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        }
+        isLocalChange.current = false;
+      }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [code, questionInfo]);
 
   const handleSave = async () => {
     isLocalChange.current = true;
@@ -306,7 +354,23 @@ const CodeEditor = ({ sessionId, onSave }) => {
               <Typography variant="body1" sx={{ color: '#2d333a', fontWeight: 500 }}>
                 Write your code here
               </Typography>
-              {syncing && (
+              {autoSaving && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <CloudSync sx={{ fontSize: '1rem', color: '#10a37f', animation: 'spin 2s linear infinite' }} />
+                  <Typography variant="caption" sx={{ color: '#10a37f', fontSize: '0.75rem' }}>
+                    Auto-saving...
+                  </Typography>
+                </Box>
+              )}
+              {!autoSaving && saved && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <CheckCircle sx={{ fontSize: '1rem', color: '#10a37f' }} />
+                  <Typography variant="caption" sx={{ color: '#10a37f', fontSize: '0.75rem' }}>
+                    Saved
+                  </Typography>
+                </Box>
+              )}
+              {syncing && !autoSaving && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <CloudSync sx={{ fontSize: '1rem', color: '#6e6e80', animation: 'spin 2s linear infinite' }} />
                   <Typography variant="caption" sx={{ color: '#6e6e80', fontSize: '0.75rem' }}>
@@ -319,6 +383,7 @@ const CodeEditor = ({ sessionId, onSave }) => {
               variant="contained"
               startIcon={saved ? <CheckCircle /> : <Save />}
               onClick={handleSave}
+              disabled={autoSaving}
               sx={{
                 bgcolor: saved ? '#10a37f' : '#10a37f',
                 '&:hover': {
@@ -326,7 +391,7 @@ const CodeEditor = ({ sessionId, onSave }) => {
                 },
               }}
             >
-              {saved ? 'Saved!' : 'Save Code'}
+              {saved ? 'Saved!' : 'Save Now'}
             </Button>
           </Box>
 
@@ -405,10 +470,10 @@ const CodeEditor = ({ sessionId, onSave }) => {
           sx={{ borderRadius: 2 }}
         >
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-            💡 Real-time collaboration enabled
+            💡 Auto-save & Real-time collaboration enabled
           </Typography>
           <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-            Click "Save Code" to save your changes. Changes are synced every 3 seconds across all viewers. Use Tab key to indent.
+            Your code is automatically saved 2 seconds after you stop typing. Changes sync across all viewers every 3 seconds. Use Tab key to indent.
           </Typography>
         </Alert>
       </Container>

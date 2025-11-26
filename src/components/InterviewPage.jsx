@@ -11,6 +11,7 @@ import {
   ListItemButton,
   Divider,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   CheckCircle,
@@ -20,15 +21,21 @@ import {
   ContentCopy,
   Assignment,
   AccountTree,
+  Download,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import AddQuestionDialog from './AddQuestionDialog';
 import GeneralFeedbackDialog from './GeneralFeedbackDialog';
 
+const API_URL = import.meta.env.PROD
+  ? '/api/code-session'
+  : 'http://localhost:5173/api/code-session';
+
 const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion, onFinish, onAddQuestion, generalFeedback, onGeneralFeedbackChange }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [loadingCode, setLoadingCode] = useState(false);
   const currentQuestion = questions[currentIndex];
 
   const handleScoreChange = (event, newValue) => {
@@ -75,7 +82,7 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
     onAddQuestion(newQuestion);
   };
 
-  const generateCodeSession = () => {
+  const generateCodeSession = async () => {
     // Generate unique 20-character session ID with timestamp in format: XXXXX-XXXXX-XXXXX-XXXXX
     const timestamp = Date.now().toString(36); // Convert timestamp to base36
     const random1 = Math.random().toString(36).substring(2);
@@ -88,7 +95,9 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
     const chars = combined.substring(0, 20).padEnd(20, '0'); // Ensure 20 chars
     const sessionId = `${chars.substring(0, 5)}-${chars.substring(5, 10)}-${chars.substring(10, 15)}-${chars.substring(15, 20)}`;
 
-    // Store question info in localStorage for the code editor
+    console.log('[InterviewPage] Generated session ID:', sessionId);
+
+    // Store question info
     const sessionData = {
       questionInfo: {
         title: currentQuestion.title,
@@ -100,6 +109,32 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
       code: '',
       timestamp: new Date().toISOString(),
     };
+
+    // Save to backend first
+    try {
+      console.log('[InterviewPage] Saving initial session to backend:', sessionId);
+      const response = await fetch(`${API_URL}?sessionId=${sessionId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: '',
+          questionInfo: sessionData.questionInfo,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('[InterviewPage] Session saved to backend:', result);
+      } else {
+        console.error('[InterviewPage] Failed to save session:', response.status);
+      }
+    } catch (error) {
+      console.error('[InterviewPage] Error saving session to backend:', error);
+    }
+
+    // Also store in localStorage as backup
     localStorage.setItem(`code_session_${sessionId}`, JSON.stringify(sessionData));
 
     // Update question with session ID
@@ -108,17 +143,58 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
     return sessionId;
   };
 
-  const handleShareCodeEditor = () => {
+  const handleShareCodeEditor = async () => {
     let sessionId = currentQuestion.codeSessionId;
 
     if (!sessionId) {
-      sessionId = generateCodeSession();
+      sessionId = await generateCodeSession();
     }
 
     const url = `${window.location.origin}/${sessionId}`;
     navigator.clipboard.writeText(url);
     setCopiedSessionId(sessionId);
     setTimeout(() => setCopiedSessionId(null), 3000);
+  };
+
+  const handleLoadCandidateCode = async () => {
+    if (!currentQuestion.codeSessionId) {
+      return;
+    }
+
+    setLoadingCode(true);
+    try {
+      const response = await fetch(`${API_URL}?sessionId=${currentQuestion.codeSessionId}`);
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (data.exists && data.code) {
+          // Update the question with the candidate's code
+          onUpdateQuestion(currentQuestion.id, { candidateCode: data.code });
+        } else {
+          // Try localStorage as fallback
+          const localData = localStorage.getItem(`code_session_${currentQuestion.codeSessionId}`);
+          if (localData) {
+            const parsed = JSON.parse(localData);
+            if (parsed.code) {
+              onUpdateQuestion(currentQuestion.id, { candidateCode: parsed.code });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading candidate code:', error);
+      // Try localStorage as fallback
+      const localData = localStorage.getItem(`code_session_${currentQuestion.codeSessionId}`);
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        if (parsed.code) {
+          onUpdateQuestion(currentQuestion.id, { candidateCode: parsed.code });
+        }
+      }
+    } finally {
+      setLoadingCode(false);
+    }
   };
 
   const getLevelColor = (level) => {
@@ -1021,17 +1097,68 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
                 }}
               >
                 {copiedSessionId === currentQuestion.codeSessionId
-                  ? 'Code Editor'
+                  ? 'Code Editor Link Copied!'
                   : currentQuestion.codeSessionId
                     ? 'Copy Code Editor Link'
                     : 'Share Code Editor with Candidate'}
               </Button>
               {currentQuestion.codeSessionId && (
-                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#6e6e80', textAlign: 'center' }}>
-                  Candidate can write code at this private link
-                </Typography>
+                <>
+                  <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#6e6e80', textAlign: 'center' }}>
+                    Candidate can write code at this private link
+                  </Typography>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={loadingCode ? <CircularProgress size={16} color="inherit" /> : <Download />}
+                    onClick={handleLoadCandidateCode}
+                    disabled={loadingCode}
+                    sx={{
+                      mt: 1,
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      bgcolor: '#10a37f',
+                      py: 1.5,
+                      '&:hover': {
+                        bgcolor: '#0d8c6e',
+                      },
+                    }}
+                  >
+                    {loadingCode ? 'Loading...' : currentQuestion.candidateCode ? 'Refresh Candidate Code' : 'Load Candidate Code'}
+                  </Button>
+                  {currentQuestion.candidateCode && (
+                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#10a37f', textAlign: 'center', fontWeight: 500 }}>
+                      ✓ Code loaded ({currentQuestion.candidateCode.length} chars)
+                    </Typography>
+                  )}
+                </>
               )}
             </Box>
+
+            {currentQuestion.candidateCode && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" sx={{ color: '#2d333a', mb: 1.5, fontWeight: 500, fontSize: '0.9375rem' }}>
+                  Candidate&apos;s Code
+                </Typography>
+                <Box
+                  component="pre"
+                  sx={{
+                    p: 2,
+                    bgcolor: '#0d1117',
+                    color: '#e6edf3',
+                    borderRadius: 1,
+                    overflow: 'auto',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.6,
+                    fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
+                    maxHeight: '300px',
+                    border: '1px solid #d1d5db',
+                  }}
+                >
+                  <code>{currentQuestion.candidateCode}</code>
+                </Box>
+              </Box>
+            )}
 
             <Box>
               <Typography variant="body2" sx={{ color: '#2d333a', mb: 1.5, fontWeight: 500, fontSize: '0.9375rem' }}>

@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import ReactMarkdown from 'react-markdown';
 import AIInsights from './AIInsights';
 
 const ReportPage = ({ interviewData, technology = 'rails', technologyName = 'Ruby on Rails', onRestart, generalFeedback }) => {
@@ -318,8 +319,9 @@ DETAILED RESPONSES:
 ${answeredQuestions.map((q, index) => `
 ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
    Score: ${q.score}%
-   Feedback: ${q.comment || 'No feedback provided'}
+   ${q.correctAnswer ? `\n   Correct Answer:\n   ${q.correctAnswer}\n` : ''}
    ${q.candidateCode ? `\n   Candidate's Code:\n   ${q.candidateCode.split('\n').map(line => '   ' + line).join('\n')}\n` : ''}
+   Feedback: ${q.comment || 'No feedback provided'}
 `).join('\n')}
     `.trim();
 
@@ -501,6 +503,21 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
       doc.text(`Category: ${question.category}`, margin + 5, yPosition);
       yPosition += 8;
       doc.setTextColor(0, 0, 0);
+
+      // Correct Answer
+      if (question.correctAnswer) {
+        checkPageBreak(15);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 120, 212);
+        doc.text('Correct Answer:', margin + 5, yPosition);
+        yPosition += 5;
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        addWrappedText(question.correctAnswer, 9, false);
+        yPosition += 5;
+      }
 
       // Feedback
       if (question.comment) {
@@ -988,11 +1005,71 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
                       }}
                     />
                   </Box>
-                  <Typography variant="body1" sx={{ fontWeight: 500, color: '#323130', mb: 2 }}>
-                    {question.question}
-                  </Typography>
+                  <Box sx={{
+                    '& p': { margin: 0, fontWeight: 500, color: '#323130', fontSize: '1rem' },
+                    '& code': {
+                      bgcolor: '#f3f2f1',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '0.9em',
+                      fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace'
+                    },
+                    '& pre': {
+                      bgcolor: '#0d1117',
+                      color: '#e6edf3',
+                      padding: '12px',
+                      borderRadius: '4px',
+                      overflow: 'auto',
+                      margin: '8px 0'
+                    },
+                    '& pre code': {
+                      bgcolor: 'transparent',
+                      padding: 0,
+                      color: 'inherit'
+                    },
+                    mb: 2
+                  }}>
+                    <ReactMarkdown>{question.question}</ReactMarkdown>
+                  </Box>
                 </Box>
               </Box>
+
+              {question.correctAnswer && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" sx={{ color: '#6e6e80', fontWeight: 600, display: 'block', mb: 1 }}>
+                    CORRECT ANSWER
+                  </Typography>
+                  <Box sx={{
+                    p: 2,
+                    bgcolor: '#f0f9ff',
+                    borderRadius: 1,
+                    borderLeft: '3px solid #0078d4',
+                    '& p': { margin: 0, color: '#2d333a', lineHeight: 1.6 },
+                    '& code': {
+                      bgcolor: '#e1f5fe',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '0.9em',
+                      fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace'
+                    },
+                    '& pre': {
+                      bgcolor: '#0d1117',
+                      color: '#e6edf3',
+                      padding: '12px',
+                      borderRadius: '4px',
+                      overflow: 'auto',
+                      margin: '8px 0'
+                    },
+                    '& pre code': {
+                      bgcolor: 'transparent',
+                      padding: 0,
+                      color: 'inherit'
+                    }
+                  }}>
+                    <ReactMarkdown>{question.correctAnswer}</ReactMarkdown>
+                  </Box>
+                </Box>
+              )}
 
               {question.candidateCode && (
                 <Box sx={{ mt: 2 }}>
@@ -1068,9 +1145,32 @@ ${index + 1}. [${q.category}] [${q.level.toUpperCase()}] ${q.question}
                               }}
                             />
                           </Box>
-                          <Typography variant="body2" sx={{ color: '#2d333a', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                            {subQuestion.question}
-                          </Typography>
+                          <Box sx={{
+                            '& p': { margin: 0, color: '#2d333a', fontSize: '0.875rem', lineHeight: 1.6 },
+                            '& code': {
+                              bgcolor: '#e0d5f0',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.85em',
+                              fontFamily: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace'
+                            },
+                            '& pre': {
+                              bgcolor: '#0d1117',
+                              color: '#e6edf3',
+                              padding: '12px',
+                              borderRadius: '4px',
+                              overflow: 'auto',
+                              margin: '8px 0',
+                              fontSize: '0.8rem'
+                            },
+                            '& pre code': {
+                              bgcolor: 'transparent',
+                              padding: 0,
+                              color: 'inherit'
+                            }
+                          }}>
+                            <ReactMarkdown>{subQuestion.question}</ReactMarkdown>
+                          </Box>
                         </Box>
                       </Grid>
                     ))}
