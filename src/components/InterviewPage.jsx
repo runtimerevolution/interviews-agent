@@ -987,6 +987,34 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
                   </Typography>
                 </Box>
 
+                {/* Scoring Criteria Display for questions with sub-questions */}
+                {currentQuestion.scoringCriteria && (
+                  <Box sx={{ mb: 3, p: 2, bgcolor: '#f9fafb', borderRadius: 1, border: '1px solid #e5e7eb' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', mb: 1.5, fontSize: '0.8125rem' }}>
+                      Scoring Criteria:
+                    </Typography>
+                    {Object.entries(currentQuestion.scoringCriteria).map(([percentage, description]) => (
+                      <Box key={percentage} sx={{ display: 'flex', gap: 1, mb: 0.75, alignItems: 'flex-start' }}>
+                        <Chip
+                          label={`${percentage}%`}
+                          size="small"
+                          sx={{
+                            minWidth: 48,
+                            height: 22,
+                            fontSize: '0.6875rem',
+                            fontWeight: 600,
+                            bgcolor: percentage === '100' ? '#10a37f' : percentage === '75' ? '#3b82f6' : percentage === '50' ? '#f59e0b' : percentage === '25' ? '#f97316' : '#ef4444',
+                            color: 'white',
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ color: '#4b5563', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+                          {description}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
                 {currentQuestion.subQuestions.map((subQuestion, idx) => (
                   <Box key={subQuestion.id} sx={{ mb: 4, pb: 3, borderBottom: idx < currentQuestion.subQuestions.length - 1 ? '1px solid #e5e7eb' : 'none' }}>
                     <Typography variant="body2" sx={{ color: '#8661c5', fontWeight: 600, mb: 1, fontSize: '0.875rem' }}>
@@ -1075,6 +1103,34 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
                     },
                   }}
                 />
+
+                {/* Scoring Criteria Display */}
+                {currentQuestion.scoringCriteria && (
+                  <Box sx={{ mt: 3, p: 2, bgcolor: '#f9fafb', borderRadius: 1, border: '1px solid #e5e7eb' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#374151', mb: 1.5, fontSize: '0.8125rem' }}>
+                      Scoring Criteria:
+                    </Typography>
+                    {Object.entries(currentQuestion.scoringCriteria).map(([percentage, description]) => (
+                      <Box key={percentage} sx={{ display: 'flex', gap: 1, mb: 0.75, alignItems: 'flex-start' }}>
+                        <Chip
+                          label={`${percentage}%`}
+                          size="small"
+                          sx={{
+                            minWidth: 48,
+                            height: 22,
+                            fontSize: '0.6875rem',
+                            fontWeight: 600,
+                            bgcolor: percentage === '100' ? '#10a37f' : percentage === '75' ? '#3b82f6' : percentage === '50' ? '#f59e0b' : percentage === '25' ? '#f97316' : '#ef4444',
+                            color: 'white',
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ color: '#4b5563', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+                          {description}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             )}
 
