@@ -22,6 +22,7 @@ import {
   Assignment,
   AccountTree,
   Download,
+  Home,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import AddQuestionDialog from './AddQuestionDialog';
@@ -31,12 +32,11 @@ const API_URL = import.meta.env.PROD
   ? '/api/code-session'
   : 'http://localhost:5173/api/code-session';
 
-const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion, onFinish, onAddQuestion, generalFeedback, onGeneralFeedbackChange }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion, onFinish, onAddQuestion, generalFeedback, onGeneralFeedbackChange, currentQuestionIndex, onQuestionIndexChange, onGoHome }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [loadingCode, setLoadingCode] = useState(false);
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion = questions[currentQuestionIndex];
 
   const handleScoreChange = (event, newValue) => {
     onUpdateQuestion(currentQuestion.id, { score: newValue });
@@ -69,8 +69,8 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
       comment: 'without knowledge',
       skipped: false
     });
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+    if (currentQuestionIndex < questions.length - 1) {
+      onQuestionIndexChange(currentQuestionIndex + 1);
     }
   };
 
@@ -259,8 +259,8 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
           {questions.map((q, index) => (
             <ListItem key={q.id} disablePadding>
               <ListItemButton
-                selected={index === currentIndex}
-                onClick={() => setCurrentIndex(index)}
+                selected={index === currentQuestionIndex}
+                onClick={() => onQuestionIndexChange(index)}
                 sx={{
                   py: 1.5,
                   px: 3,
@@ -432,7 +432,7 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
         >
           <Box>
             <Typography variant="body2" sx={{ color: '#6e6e80', mb: 0.5, fontSize: '0.875rem' }}>
-              Question {currentIndex + 1} of {questions.length}
+              Question {currentQuestionIndex + 1} of {questions.length}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
               <Chip
@@ -483,22 +483,42 @@ const InterviewPage = ({ questions, technology, technologyName, onUpdateQuestion
               )}
             </Box>
           </Box>
-          <Button
-            variant="outlined"
-            onClick={handleWithoutKnowledge}
-            sx={{
-              textTransform: 'none',
-              borderColor: '#f59e0b',
-              color: '#f59e0b',
-              fontWeight: 500,
-              '&:hover': {
-                borderColor: '#d97706',
-                bgcolor: '#fffbeb',
-              },
-            }}
-          >
-            Without Knowledge
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={handleWithoutKnowledge}
+              sx={{
+                textTransform: 'none',
+                borderColor: '#f59e0b',
+                color: '#f59e0b',
+                fontWeight: 500,
+                '&:hover': {
+                  borderColor: '#d97706',
+                  bgcolor: '#fffbeb',
+                },
+              }}
+            >
+              Without Knowledge
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Home />}
+              onClick={onGoHome}
+              sx={{
+                textTransform: 'none',
+                borderColor: '#e5e7eb',
+                color: '#6e6e80',
+                fontWeight: 500,
+                '&:hover': {
+                  borderColor: '#10a37f',
+                  color: '#10a37f',
+                  bgcolor: '#f0fdf4',
+                },
+              }}
+            >
+              New Interview
+            </Button>
+          </Box>
         </Box>
 
         {/* Content Area - Split View */}

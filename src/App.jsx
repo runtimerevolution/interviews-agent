@@ -24,6 +24,9 @@ const techNames = {
   python: 'Python',
 };
 
+// LocalStorage key for persisting interview state
+const INTERVIEW_STORAGE_KEY = 'interview_session';
+
 const theme = createTheme({
   palette: {
     primary: {
@@ -103,20 +106,76 @@ function App() {
   const [codeSessionId, setCodeSessionId] = useState(null);
   const [selectedTechnology, setSelectedTechnology] = useState(null);
   const [generalFeedback, setGeneralFeedback] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Check URL for code editor session
+  // Load interview state from localStorage on mount
   useEffect(() => {
     const path = window.location.pathname;
+
+    // Check URL for code editor session first
     if (path.length > 1) {
       const sessionId = path.substring(1);
       setCodeSessionId(sessionId);
       setCurrentPage('code-editor');
+      setIsInitialized(true);
+      return;
     }
+
+    // Check for existing interview in localStorage
+    try {
+      const savedSession = localStorage.getItem(INTERVIEW_STORAGE_KEY);
+      if (savedSession) {
+        const {
+          interviewData: savedData,
+          selectedTechnology: savedTech,
+          generalFeedback: savedFeedback,
+          currentPage: savedPage,
+          currentQuestionIndex: savedIndex
+        } = JSON.parse(savedSession);
+
+        if (savedData && savedData.length > 0 && savedTech) {
+          setInterviewData(savedData);
+          setSelectedTechnology(savedTech);
+          setGeneralFeedback(savedFeedback || null);
+          setCurrentQuestionIndex(savedIndex || 0);
+          // Resume to interview page (not report, as that requires finishing)
+          setCurrentPage(savedPage === 'report' ? 'report' : 'interview');
+        }
+      }
+    } catch (e) {
+      console.error('Error loading interview from localStorage:', e);
+    }
+
+    setIsInitialized(true);
   }, []);
 
+  // Save interview state to localStorage whenever it changes
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    // Only save if there's an active interview
+    if (interviewData.length > 0 && selectedTechnology && currentPage !== 'home') {
+      const sessionData = {
+        interviewData,
+        selectedTechnology,
+        generalFeedback,
+        currentPage,
+        currentQuestionIndex,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(INTERVIEW_STORAGE_KEY, JSON.stringify(sessionData));
+    }
+  }, [interviewData, selectedTechnology, generalFeedback, currentPage, currentQuestionIndex, isInitialized]);
+
   const startInterview = (technology) => {
+    // Clear any existing interview data from localStorage
+    localStorage.removeItem(INTERVIEW_STORAGE_KEY);
+
     const questions = questionsByTech[technology];
     setSelectedTechnology(technology);
+    setGeneralFeedback(null);
+    setCurrentQuestionIndex(0);
     setInterviewData(
       questions.map(q => ({
         ...q,
@@ -178,9 +237,13 @@ function App() {
   };
 
   const restartInterview = () => {
+    // Clear interview data from localStorage
+    localStorage.removeItem(INTERVIEW_STORAGE_KEY);
+
     setInterviewData([]);
     setSelectedTechnology(null);
     setGeneralFeedback(null);
+    setCurrentQuestionIndex(0);
     setCurrentPage('home');
   };
 
@@ -198,6 +261,9 @@ function App() {
           onFinish={finishInterview}
           generalFeedback={generalFeedback}
           onGeneralFeedbackChange={setGeneralFeedback}
+          currentQuestionIndex={currentQuestionIndex}
+          onQuestionIndexChange={setCurrentQuestionIndex}
+          onGoHome={restartInterview}
         />
       )}
       {currentPage === 'report' && (
